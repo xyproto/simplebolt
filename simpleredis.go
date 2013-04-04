@@ -1,4 +1,4 @@
-package genericsite
+package simpleredis
 
 import (
 	"strconv"
@@ -7,7 +7,8 @@ import (
 )
 
 // Functions for dealing with string values in a simple fashion in Redis
-// TODO: Split out as a separate package
+
+// TODO: Comments and tests
 
 type ConnectionPool redis.Pool
 
