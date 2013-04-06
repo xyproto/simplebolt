@@ -14,10 +14,10 @@ type RedisDatastructure struct {
 }
 
 type (
-	RedisList     RedisDatastructure
-	RedisSet      RedisDatastructure
-	RedisHashMap  RedisDatastructure
-	RedisKeyValue RedisDatastructure
+	List     RedisDatastructure
+	Set      RedisDatastructure
+	HashMap  RedisDatastructure
+	KeyValue RedisDatastructure
 
 	ConnectionPool redis.Pool
 )
@@ -44,7 +44,7 @@ func getString(bi []interface{}, i int) string {
 /* --- ConnectionPool functions --- */
 
 // Create a new connection pool
-func NewRedisConnectionPool() *ConnectionPool {
+func NewConnectionPool() *ConnectionPool {
 	// The second argument is the maximum number of idle connections
 	redisPool := redis.NewPool(newRedisConnection, MAXIMUM_NUMBER_OF_IDLE_CONNECTIONS)
 	pool := ConnectionPool(*redisPool)
@@ -63,22 +63,22 @@ func (pool *ConnectionPool) Close() {
 	redisPool.Close()
 }
 
-/* --- RedisList functions --- */
+/* --- List functions --- */
 
 // Create a new list
-func NewRedisList(pool *ConnectionPool, id string) *RedisList {
-	return &RedisList{pool, id}
+func NewList(pool *ConnectionPool, id string) *List {
+	return &List{pool, id}
 }
 
 // Add an element to the list
-func (rl *RedisList) Add(value string) error {
+func (rl *List) Add(value string) error {
 	conn := rl.pool.Get()
 	_, err := conn.Do("RPUSH", rl.id, value)
 	return err
 }
 
 // Get all elements of a list
-func (rl *RedisList) GetAll() ([]string, error) {
+func (rl *List) GetAll() ([]string, error) {
 	conn := rl.pool.Get()
 	result, err := redis.Values(conn.Do("LRANGE", rl.id, "0", "-1"))
 	strs := make([]string, len(result))
@@ -89,7 +89,7 @@ func (rl *RedisList) GetAll() ([]string, error) {
 }
 
 // Get the last element of a list
-func (rl *RedisList) GetLast() (string, error) {
+func (rl *List) GetLast() (string, error) {
 	conn := rl.pool.Get()
 	result, err := redis.Values(conn.Do("LRANGE", rl.id, "-1", "-1"))
 	if len(result) == 1 {
@@ -99,7 +99,7 @@ func (rl *RedisList) GetLast() (string, error) {
 }
 
 // Get the last N elements of a list
-func (rl *RedisList) GetLastN(n int) ([]string, error) {
+func (rl *List) GetLastN(n int) ([]string, error) {
 	conn := rl.pool.Get()
 	result, err := redis.Values(conn.Do("LRANGE", rl.id, "-"+strconv.Itoa(n), "-1"))
 	strs := make([]string, len(result))
@@ -110,28 +110,28 @@ func (rl *RedisList) GetLastN(n int) ([]string, error) {
 }
 
 // Delete an entire list
-func (rl *RedisList) DelAll() error {
+func (rl *List) DelAll() error {
 	conn := rl.pool.Get()
 	_, err := conn.Do("DEL", rl.id)
 	return err
 }
 
-/* --- RedisSet functions --- */
+/* --- Set functions --- */
 
 // Create a new set
-func NewRedisSet(pool *ConnectionPool, id string) *RedisSet {
-	return &RedisSet{pool, id}
+func NewSet(pool *ConnectionPool, id string) *Set {
+	return &Set{pool, id}
 }
 
 // Add an element to the set
-func (rs *RedisSet) Add(value string) error {
+func (rs *Set) Add(value string) error {
 	conn := rs.pool.Get()
 	_, err := conn.Do("SADD", rs.id, value)
 	return err
 }
 
 // Check if a given value is in the set
-func (rs *RedisSet) Has(value string) (bool, error) {
+func (rs *Set) Has(value string) (bool, error) {
 	conn := rs.pool.Get()
 	retval, err := conn.Do("SISMEMBER", rs.id, value)
 	if err != nil {
@@ -141,7 +141,7 @@ func (rs *RedisSet) Has(value string) (bool, error) {
 }
 
 // Get all elements of the set
-func (rs *RedisSet) GetAll() ([]string, error) {
+func (rs *Set) GetAll() ([]string, error) {
 	conn := rs.pool.Get()
 	result, err := redis.Values(conn.Do("SMEMBERS", rs.id))
 	strs := make([]string, len(result))
@@ -152,35 +152,35 @@ func (rs *RedisSet) GetAll() ([]string, error) {
 }
 
 // Remove an element from the set
-func (rs *RedisSet) Del(value string) error {
+func (rs *Set) Del(value string) error {
 	conn := rs.pool.Get()
 	_, err := conn.Do("SREM", rs.id, value)
 	return err
 }
 
 // Delete an entire set
-func (rs *RedisSet) DelAll() error {
+func (rs *Set) DelAll() error {
 	conn := rs.pool.Get()
 	_, err := conn.Do("DEL", rs.id)
 	return err
 }
 
-/* --- RedisHashMap functions --- */
+/* --- HashMap functions --- */
 
 // Create a new hashmap
-func NewRedisHashMap(pool *ConnectionPool, id string) *RedisHashMap {
-	return &RedisHashMap{pool, id}
+func NewHashMap(pool *ConnectionPool, id string) *HashMap {
+	return &HashMap{pool, id}
 }
 
 // Set a value in a hashmap given the element id (for instance a user id) and the key (for instance "password")
-func (rh *RedisHashMap) Set(elementid, key, value string) error {
+func (rh *HashMap) Set(elementid, key, value string) error {
 	conn := rh.pool.Get()
 	_, err := conn.Do("HSET", rh.id+":"+elementid, key, value)
 	return err
 }
 
 // Get a value from a hashmap given the element id (for instance a user id) and the key (for instance "password")
-func (rh *RedisHashMap) Get(elementid, key string) (string, error) {
+func (rh *HashMap) Get(elementid, key string) (string, error) {
 	conn := rh.pool.Get()
 	result, err := redis.String(conn.Do("HGET", rh.id+":"+elementid, key))
 	if err != nil {
@@ -190,35 +190,35 @@ func (rh *RedisHashMap) Get(elementid, key string) (string, error) {
 }
 
 // Delete an entry in a hashmap given the element id (for instance a user id) and the key (for instance "password")
-func (rh *RedisHashMap) Del(elementid, key string) error {
+func (rh *HashMap) Del(elementid, key string) error {
 	conn := rh.pool.Get()
 	_, err := conn.Do("HDEL", rh.id+":"+elementid, key)
 	return err
 }
 
 // Delete an entire hashmap
-func (rh *RedisHashMap) DelAll() error {
+func (rh *HashMap) DelAll() error {
 	conn := rh.pool.Get()
 	_, err := conn.Do("DEL", rh.id)
 	return err
 }
 
-/* --- RedisKeyValue functions --- */
+/* --- KeyValue functions --- */
 
 // Create a new key/value 
-func NewRedisKeyValue(pool *ConnectionPool, id string) *RedisKeyValue {
-	return &RedisKeyValue{pool, id}
+func NewKeyValue(pool *ConnectionPool, id string) *KeyValue {
+	return &KeyValue{pool, id}
 }
 
 // Set a key and value
-func (rkv *RedisKeyValue) Set(key, value string) error {
+func (rkv *KeyValue) Set(key, value string) error {
 	conn := rkv.pool.Get()
 	_, err := conn.Do("SET", rkv.id+":"+key, value)
 	return err
 }
 
 // Get a value given a key
-func (rkv *RedisKeyValue) Get(key string) (string, error) {
+func (rkv *KeyValue) Get(key string) (string, error) {
 	conn := rkv.pool.Get()
 	result, err := redis.String(conn.Do("GET", rkv.id+":"+key))
 	if err != nil {
@@ -228,14 +228,14 @@ func (rkv *RedisKeyValue) Get(key string) (string, error) {
 }
 
 // Delete a key
-func (rkv *RedisKeyValue) Del(key string) error {
+func (rkv *KeyValue) Del(key string) error {
 	conn := rkv.pool.Get()
 	_, err := conn.Do("DEL", rkv.id+":"+key)
 	return err
 }
 
 // Delete a key/value
-func (rkv *RedisKeyValue) DelAll() error {
+func (rkv *KeyValue) DelAll() error {
 	conn := rkv.pool.Get()
 	_, err := conn.Do("DEL", rkv.id)
 	return err
