@@ -189,6 +189,16 @@ func (rh *HashMap) Get(elementid, key string) (string, error) {
 	return result, nil
 }
 
+// Check if a given key is in the hash map
+func (rh *HashMap) Has(key string) (bool, error) {
+	conn := rh.pool.Get()
+	retval, err := conn.Do("HEXISTS", rh.id, key)
+	if err != nil {
+		panic(err)
+	}
+	return redis.Bool(retval, err)
+}
+
 // Delete an entry in a hashmap given the element id (for instance a user id) and the key (for instance "password")
 func (rh *HashMap) Del(elementid, key string) error {
 	conn := rh.pool.Get()
