@@ -189,14 +189,20 @@ func (rh *HashMap) Get(elementid, key string) (string, error) {
 	return result, nil
 }
 
-// Check if a given key is in the hash map
-func (rh *HashMap) Has(key string) (bool, error) {
+// Check if a given elementid + key is in the hash map
+func (rh *HashMap) Has(elementid, key string) (bool, error) {
 	conn := rh.pool.Get()
-	retval, err := conn.Do("HEXISTS", rh.id, key)
+	retval, err := conn.Do("HEXISTS", rh.id+":"+elementid, key)
 	if err != nil {
 		panic(err)
 	}
 	return redis.Bool(retval, err)
+}
+
+// Check if a given elementid exists as a hash map at all
+func (rh *HashMap) Exists(elementid string) (bool, error) {
+	// TODO: key is not meant to be a wildcard, check for "*"
+	return hasKey(rh.pool, rh.id+":"+elementid)
 }
 
 // Delete an entry in a hashmap given the element id (for instance a user id) and the key (for instance "password")
@@ -249,4 +255,19 @@ func (rkv *KeyValue) DelAll() error {
 	conn := rkv.pool.Get()
 	_, err := conn.Do("DEL", rkv.id)
 	return err
+}
+
+// --- Generic redis functions ---
+
+// Check if a key exists. The key can be a wildcard (ie. "user*").
+func hasKey(pool *ConnectionPool, wildcard string) (bool, error) {
+	conn := pool.Get()
+	result, err := redis.Values(conn.Do("KEYS", wildcard))
+	if err != nil {
+		return false, err
+	}
+	if len(result) > 0 {
+		return true, nil
+	}
+	return false, nil
 }
