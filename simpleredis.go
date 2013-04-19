@@ -205,10 +205,17 @@ func (rh *HashMap) Exists(elementid string) (bool, error) {
 	return hasKey(rh.pool, rh.id+":"+elementid)
 }
 
-// Delete an entry in a hashmap given the element id (for instance a user id) and the key (for instance "password")
-func (rh *HashMap) Del(elementid, key string) error {
+// Delete a key for an entry in a hashmap (for instance the email field for a user)
+func (rh *HashMap) DelKey(elementid, key string) error {
 	conn := rh.pool.Get()
 	_, err := conn.Do("HDEL", rh.id+":"+elementid, key)
+	return err
+}
+
+// Delete a hashmap (for instance a user)
+func (rh *HashMap) Del(elementid string) error {
+	conn := rh.pool.Get()
+	_, err := conn.Do("DEL", rh.id+":"+elementid)
 	return err
 }
 
