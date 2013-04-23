@@ -205,6 +205,18 @@ func (rh *HashMap) Exists(elementid string) (bool, error) {
 	return hasKey(rh.pool, rh.id+":"+elementid)
 }
 
+// Get all elementid's for all hash elements
+func (rh *HashMap) GetAll() ([]string, error) {
+	conn := rh.pool.Get()
+	result, err := redis.Values(conn.Do("KEYS", rh.id+":*"))
+	strs := make([]string, len(result))
+	idlen := len(rh.id)
+	for i := 0; i < len(result); i++ {
+		strs[i] = getString(result, i)[idlen+1:]
+	}
+	return strs, err
+}
+
 // Delete a key for an entry in a hashmap (for instance the email field for a user)
 func (rh *HashMap) DelKey(elementid, key string) error {
 	conn := rh.pool.Get()
