@@ -36,6 +36,11 @@ func newRedisConnection() (redis.Conn, error) {
 	return redis.Dial("tcp", REDIS_SERVER)
 }
 
+// Connect to host:port, host may be omitted, so ":6379" is valid
+func newRedisConnectionTo(hostColonPort string) (redis.Conn, error) {
+	return redis.Dial("tcp", hostColonPort)
+}
+
 // Get a string from a list of results at a given position
 func getString(bi []interface{}, i int) string {
 	return string(bi[i].([]uint8))
