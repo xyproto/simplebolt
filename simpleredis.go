@@ -245,7 +245,7 @@ func (rh *HashMap) DelAll() error {
 
 /* --- KeyValue functions --- */
 
-// Create a new key/value 
+// Create a new key/value
 func NewKeyValue(pool *ConnectionPool, id string) *KeyValue {
 	return &KeyValue{pool, id}
 }
