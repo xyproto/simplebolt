@@ -56,9 +56,11 @@ func main() {
 }
 ```
 
-Author and license
-------------------
+Version, license and author
+---------------------------
+
+Version: 0.1
+License: MIT
 
 Alexander Rødseth <rodseth at gmail.com>
 
-License: MIT
