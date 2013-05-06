@@ -18,7 +18,7 @@ type (
 	Set      redisDatastructure
 	HashMap  redisDatastructure
 	KeyValue redisDatastructure
-
+	// A pool of readily available Redis connections
 	ConnectionPool redis.Pool
 )
 
