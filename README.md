@@ -1,5 +1,8 @@
-Simpleredis
-===========
+Simple Redis
+============
+
+Short description
+-----------------
 
 Easy use of Redis from Go
 
