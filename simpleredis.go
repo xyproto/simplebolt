@@ -25,7 +25,7 @@ type (
 const (
 	// How many connections should stay ready for requests
 	MAXIMUM_NUMBER_OF_IDLE_CONNECTIONS = 3
-	// The url:port that Redis is running at
+	// The default url:port that Redis is running at
 	REDIS_SERVER = ":6379"
 )
 
