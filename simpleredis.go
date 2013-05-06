@@ -56,7 +56,7 @@ func NewConnectionPool() *ConnectionPool {
 	return &pool
 }
 
-// Get an available connection from the connection pool
+// Get one of the available connections from the connection pool
 func (pool *ConnectionPool) Get() redis.Conn {
 	redisPool := redis.Pool(*pool)
 	return redisPool.Get()
