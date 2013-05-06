@@ -29,8 +29,8 @@ func TestList(t *testing.T) {
 	if items[0] != testdata {
 		t.Errorf("Error, wrong list contents! %s", err)
 	}
-	err = list.DelAll()
+	err = list.Remove()
 	if err != nil {
-		t.Errorf("Error, could not delete list! %s", err)
+		t.Errorf("Error, could not remove list! %s", err)
 	}
 }

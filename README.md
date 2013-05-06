@@ -49,7 +49,7 @@ func main() {
 	fmt.Println("The value of the stored item is:", item)
 
 	// Remove the list
-	err = list.DelAll()
+	err = list.Remove()
 	if err != nil {
 		panic("Could not remove the list!")
 	}
