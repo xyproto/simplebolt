@@ -24,16 +24,16 @@ type (
 
 const (
 	// How many connections should stay ready for requests
-	MAXIMUM_NUMBER_OF_IDLE_CONNECTIONS = 3
+	maximum_number_of_idle_connections = 3
 	// The default url:port that Redis is running at
-	REDIS_SERVER = ":6379"
+	default_redis_server = ":6379"
 )
 
 /* --- Helper functions --- */
 
 // Connect to the local instance of Redis at port 6379
 func newRedisConnection() (redis.Conn, error) {
-	return redis.Dial("tcp", REDIS_SERVER)
+	return redis.Dial("tcp", default_redis_server)
 }
 
 // Connect to host:port, host may be omitted, so ":6379" is valid
@@ -51,7 +51,7 @@ func getString(bi []interface{}, i int) string {
 // Create a new connection pool
 func NewConnectionPool() *ConnectionPool {
 	// The second argument is the maximum number of idle connections
-	redisPool := redis.NewPool(newRedisConnection, MAXIMUM_NUMBER_OF_IDLE_CONNECTIONS)
+	redisPool := redis.NewPool(newRedisConnection, maximum_number_of_idle_connections)
 	pool := ConnectionPool(*redisPool)
 	return &pool
 }
