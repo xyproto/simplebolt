@@ -8,16 +8,16 @@ import (
 
 // Functions for dealing with string values in a simple fashion in Redis
 
-type RedisDatastructure struct {
+type redisDatastructure struct {
 	pool *ConnectionPool
 	id   string
 }
 
 type (
-	List     RedisDatastructure
-	Set      RedisDatastructure
-	HashMap  RedisDatastructure
-	KeyValue RedisDatastructure
+	List     redisDatastructure
+	Set      redisDatastructure
+	HashMap  redisDatastructure
+	KeyValue redisDatastructure
 
 	ConnectionPool redis.Pool
 )

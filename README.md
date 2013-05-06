@@ -1,4 +1,4 @@
-simpleredis
+Simpleredis
 ===========
 
 Easy use of Redis from Go
@@ -8,6 +8,11 @@ Online API Documentation
 
 [go.pkgdoc.org](http://go.pkgdoc.org/github.com/xyproto/simpleredis)
 
+Features and limitations
+------------------------
+
+* Supports simple use of lists, hashmaps, sets and key/values
+* Deals mainly with strings
 
 Example use
 -----------
