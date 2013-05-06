@@ -6,34 +6,34 @@ import (
 	"github.com/garyburd/redigo/redis"
 )
 
-// Functions for dealing with string values in a simple fashion in Redis
-
+// Common for each of the redis datastructures used here
 type redisDatastructure struct {
 	pool *ConnectionPool
 	id   string
 }
 
 type (
+	// A pool of readily available Redis connections
+	ConnectionPool redis.Pool
+
 	List     redisDatastructure
 	Set      redisDatastructure
 	HashMap  redisDatastructure
 	KeyValue redisDatastructure
-	// A pool of readily available Redis connections
-	ConnectionPool redis.Pool
 )
 
 const (
-	// How many connections should stay ready for requests
-	maximum_number_of_idle_connections = 3
-	// The default url:port that Redis is running at
-	default_redis_server = ":6379"
+	// How many connections should stay ready for requests, at a maximum?
+	maxIdleConnections = 3
+	// The default [url]:port that Redis is running at
+	defaultRedisServer = ":6379"
 )
 
 /* --- Helper functions --- */
 
 // Connect to the local instance of Redis at port 6379
 func newRedisConnection() (redis.Conn, error) {
-	return redis.Dial("tcp", default_redis_server)
+	return redis.Dial("tcp", defaultRedisServer)
 }
 
 // Connect to host:port, host may be omitted, so ":6379" is valid
@@ -51,7 +51,7 @@ func getString(bi []interface{}, i int) string {
 // Create a new connection pool
 func NewConnectionPool() *ConnectionPool {
 	// The second argument is the maximum number of idle connections
-	redisPool := redis.NewPool(newRedisConnection, maximum_number_of_idle_connections)
+	redisPool := redis.NewPool(newRedisConnection, maxIdleConnections)
 	pool := ConnectionPool(*redisPool)
 	return &pool
 }
@@ -114,8 +114,8 @@ func (rl *List) GetLastN(n int) ([]string, error) {
 	return strs, err
 }
 
-// Delete an entire list
-func (rl *List) DelAll() error {
+// Remove this list
+func (rl *List) Remove() error {
 	conn := rl.pool.Get()
 	_, err := conn.Do("DEL", rl.id)
 	return err
@@ -163,8 +163,8 @@ func (rs *Set) Del(value string) error {
 	return err
 }
 
-// Delete an entire set
-func (rs *Set) DelAll() error {
+// Remove this set
+func (rs *Set) Remove() error {
 	conn := rs.pool.Get()
 	_, err := conn.Do("DEL", rs.id)
 	return err
@@ -222,22 +222,22 @@ func (rh *HashMap) GetAll() ([]string, error) {
 	return strs, err
 }
 
-// Delete a key for an entry in a hashmap (for instance the email field for a user)
+// Remove a key for an entry in a hashmap (for instance the email field for a user)
 func (rh *HashMap) DelKey(elementid, key string) error {
 	conn := rh.pool.Get()
 	_, err := conn.Do("HDEL", rh.id+":"+elementid, key)
 	return err
 }
 
-// Delete a hashmap (for instance a user)
+// Remove a hashmap (for instance a user)
 func (rh *HashMap) Del(elementid string) error {
 	conn := rh.pool.Get()
 	_, err := conn.Do("DEL", rh.id+":"+elementid)
 	return err
 }
 
-// Delete an entire hashmap
-func (rh *HashMap) DelAll() error {
+// Remove this hashmap
+func (rh *HashMap) Remove() error {
 	conn := rh.pool.Get()
 	_, err := conn.Do("DEL", rh.id)
 	return err
@@ -267,15 +267,15 @@ func (rkv *KeyValue) Get(key string) (string, error) {
 	return result, nil
 }
 
-// Delete a key
+// Remove a key
 func (rkv *KeyValue) Del(key string) error {
 	conn := rkv.pool.Get()
 	_, err := conn.Do("DEL", rkv.id+":"+key)
 	return err
 }
 
-// Delete a key/value
-func (rkv *KeyValue) DelAll() error {
+// Remove this key/value
+func (rkv *KeyValue) Remove() error {
 	conn := rkv.pool.Get()
 	_, err := conn.Do("DEL", rkv.id)
 	return err
