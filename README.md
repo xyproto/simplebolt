@@ -3,6 +3,8 @@ Simple Redis
 
 Easy way to use Redis from Go
 
+Uses [redigo](https://github.com/garyburd/redigo/redis)
+
 Online API Documentation
 ------------------------
 
