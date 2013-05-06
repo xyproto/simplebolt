@@ -1,7 +1,7 @@
 Simple Redis
 ============
 
-* Easy use of Redis from Go
+An easy way to use Redis from Go
 
 Online API Documentation
 ------------------------
