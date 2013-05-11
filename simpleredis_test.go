@@ -26,7 +26,7 @@ func TestList(t *testing.T) {
 	if len(items) != 1 {
 		t.Errorf("Error, wrong list length! %s", err)
 	}
-	if items[0] != testdata {
+	if (len(items) > 0) && (items[0] != testdata) {
 		t.Errorf("Error, wrong list contents! %s", err)
 	}
 	err = list.Remove()
