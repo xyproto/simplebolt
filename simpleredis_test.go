@@ -10,6 +10,7 @@ var pool *ConnectionPool
 
 func TestConnection(t *testing.T) {
 	pool = NewConnectionPool()
+	pool.SelectDatabase(1)
 }
 
 func TestList(t *testing.T) {

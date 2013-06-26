@@ -58,6 +58,13 @@ func NewConnectionPool() *ConnectionPool {
 	return &pool
 }
 
+// Change to a different database number
+func (pool *ConnectionPool) SelectDatabase(index int) error {
+	conn := pool.Get()
+	_, err := conn.Do("SELECT", index)
+	return err
+}
+
 // Get one of the available connections from the connection pool
 func (pool *ConnectionPool) Get() redis.Conn {
 	redisPool := redis.Pool(*pool)
