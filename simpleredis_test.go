@@ -10,7 +10,6 @@ var pool *ConnectionPool
 
 func TestConnection(t *testing.T) {
 	pool = NewConnectionPool()
-	pool.SelectDatabase(1)
 }
 
 func TestList(t *testing.T) {
@@ -19,6 +18,7 @@ func TestList(t *testing.T) {
 		testdata = "123abc"
 	)
 	list := NewList(pool, listname)
+	list.SelectDatabase(1)
 	err := list.Add(testdata)
 	if err != nil {
 		t.Errorf("Error, could not add item to list! %s", err)

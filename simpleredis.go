@@ -8,8 +8,9 @@ import (
 
 // Common for each of the redis datastructures used here
 type redisDatastructure struct {
-	pool *ConnectionPool
-	id   string
+	pool    *ConnectionPool
+	id      string
+	dbindex int
 }
 
 type (
@@ -58,17 +59,16 @@ func NewConnectionPool() *ConnectionPool {
 	return &pool
 }
 
-// Change to a different database number
-func (pool *ConnectionPool) SelectDatabase(index int) error {
-	conn := pool.Get()
-	_, err := conn.Do("SELECT", index)
-	return err
-}
-
-// Get one of the available connections from the connection pool
-func (pool *ConnectionPool) Get() redis.Conn {
+// Get one of the available connections from the connection pool, given a database index
+func (pool *ConnectionPool) Get(dbindex int) redis.Conn {
 	redisPool := redis.Pool(*pool)
-	return redisPool.Get()
+	conn := redisPool.Get()
+	// The default database index is 0
+	if dbindex != 0 {
+		// SELECT is not critical, ignore the return values
+		conn.Do("SELECT", strconv.Itoa(dbindex))
+	}
+	return conn
 }
 
 // Close down the connection pool
@@ -81,19 +81,24 @@ func (pool *ConnectionPool) Close() {
 
 // Create a new list
 func NewList(pool *ConnectionPool, id string) *List {
-	return &List{pool, id}
+	return &List{pool, id, 0}
+}
+
+// Select a different database
+func (rl *List) SelectDatabase(dbindex int) {
+	rl.dbindex = dbindex
 }
 
 // Add an element to the list
 func (rl *List) Add(value string) error {
-	conn := rl.pool.Get()
+	conn := rl.pool.Get(rl.dbindex)
 	_, err := conn.Do("RPUSH", rl.id, value)
 	return err
 }
 
 // Get all elements of a list
 func (rl *List) GetAll() ([]string, error) {
-	conn := rl.pool.Get()
+	conn := rl.pool.Get(rl.dbindex)
 	result, err := redis.Values(conn.Do("LRANGE", rl.id, "0", "-1"))
 	strs := make([]string, len(result))
 	for i := 0; i < len(result); i++ {
@@ -104,7 +109,7 @@ func (rl *List) GetAll() ([]string, error) {
 
 // Get the last element of a list
 func (rl *List) GetLast() (string, error) {
-	conn := rl.pool.Get()
+	conn := rl.pool.Get(rl.dbindex)
 	result, err := redis.Values(conn.Do("LRANGE", rl.id, "-1", "-1"))
 	if len(result) == 1 {
 		return getString(result, 0), err
@@ -114,7 +119,7 @@ func (rl *List) GetLast() (string, error) {
 
 // Get the last N elements of a list
 func (rl *List) GetLastN(n int) ([]string, error) {
-	conn := rl.pool.Get()
+	conn := rl.pool.Get(rl.dbindex)
 	result, err := redis.Values(conn.Do("LRANGE", rl.id, "-"+strconv.Itoa(n), "-1"))
 	strs := make([]string, len(result))
 	for i := 0; i < len(result); i++ {
@@ -125,7 +130,7 @@ func (rl *List) GetLastN(n int) ([]string, error) {
 
 // Remove this list
 func (rl *List) Remove() error {
-	conn := rl.pool.Get()
+	conn := rl.pool.Get(rl.dbindex)
 	_, err := conn.Do("DEL", rl.id)
 	return err
 }
@@ -134,19 +139,24 @@ func (rl *List) Remove() error {
 
 // Create a new set
 func NewSet(pool *ConnectionPool, id string) *Set {
-	return &Set{pool, id}
+	return &Set{pool, id, 0}
+}
+
+// Select a different database
+func (rs *Set) SelectDatabase(dbindex int) {
+	rs.dbindex = dbindex
 }
 
 // Add an element to the set
 func (rs *Set) Add(value string) error {
-	conn := rs.pool.Get()
+	conn := rs.pool.Get(rs.dbindex)
 	_, err := conn.Do("SADD", rs.id, value)
 	return err
 }
 
 // Check if a given value is in the set
 func (rs *Set) Has(value string) (bool, error) {
-	conn := rs.pool.Get()
+	conn := rs.pool.Get(rs.dbindex)
 	retval, err := conn.Do("SISMEMBER", rs.id, value)
 	if err != nil {
 		panic(err)
@@ -156,7 +166,7 @@ func (rs *Set) Has(value string) (bool, error) {
 
 // Get all elements of the set
 func (rs *Set) GetAll() ([]string, error) {
-	conn := rs.pool.Get()
+	conn := rs.pool.Get(rs.dbindex)
 	result, err := redis.Values(conn.Do("SMEMBERS", rs.id))
 	strs := make([]string, len(result))
 	for i := 0; i < len(result); i++ {
@@ -167,14 +177,14 @@ func (rs *Set) GetAll() ([]string, error) {
 
 // Remove an element from the set
 func (rs *Set) Del(value string) error {
-	conn := rs.pool.Get()
+	conn := rs.pool.Get(rs.dbindex)
 	_, err := conn.Do("SREM", rs.id, value)
 	return err
 }
 
 // Remove this set
 func (rs *Set) Remove() error {
-	conn := rs.pool.Get()
+	conn := rs.pool.Get(rs.dbindex)
 	_, err := conn.Do("DEL", rs.id)
 	return err
 }
@@ -183,19 +193,24 @@ func (rs *Set) Remove() error {
 
 // Create a new hashmap
 func NewHashMap(pool *ConnectionPool, id string) *HashMap {
-	return &HashMap{pool, id}
+	return &HashMap{pool, id, 0}
+}
+
+// Select a different database
+func (rh *HashMap) SelectDatabase(dbindex int) {
+	rh.dbindex = dbindex
 }
 
 // Set a value in a hashmap given the element id (for instance a user id) and the key (for instance "password")
 func (rh *HashMap) Set(elementid, key, value string) error {
-	conn := rh.pool.Get()
+	conn := rh.pool.Get(rh.dbindex)
 	_, err := conn.Do("HSET", rh.id+":"+elementid, key, value)
 	return err
 }
 
 // Get a value from a hashmap given the element id (for instance a user id) and the key (for instance "password")
 func (rh *HashMap) Get(elementid, key string) (string, error) {
-	conn := rh.pool.Get()
+	conn := rh.pool.Get(rh.dbindex)
 	result, err := redis.String(conn.Do("HGET", rh.id+":"+elementid, key))
 	if err != nil {
 		return "", err
@@ -205,7 +220,7 @@ func (rh *HashMap) Get(elementid, key string) (string, error) {
 
 // Check if a given elementid + key is in the hash map
 func (rh *HashMap) Has(elementid, key string) (bool, error) {
-	conn := rh.pool.Get()
+	conn := rh.pool.Get(rh.dbindex)
 	retval, err := conn.Do("HEXISTS", rh.id+":"+elementid, key)
 	if err != nil {
 		panic(err)
@@ -216,12 +231,12 @@ func (rh *HashMap) Has(elementid, key string) (bool, error) {
 // Check if a given elementid exists as a hash map at all
 func (rh *HashMap) Exists(elementid string) (bool, error) {
 	// TODO: key is not meant to be a wildcard, check for "*"
-	return hasKey(rh.pool, rh.id+":"+elementid)
+	return hasKey(rh.pool, rh.id+":"+elementid, rh.dbindex)
 }
 
 // Get all elementid's for all hash elements
 func (rh *HashMap) GetAll() ([]string, error) {
-	conn := rh.pool.Get()
+	conn := rh.pool.Get(rh.dbindex)
 	result, err := redis.Values(conn.Do("KEYS", rh.id+":*"))
 	strs := make([]string, len(result))
 	idlen := len(rh.id)
@@ -233,21 +248,21 @@ func (rh *HashMap) GetAll() ([]string, error) {
 
 // Remove a key for an entry in a hashmap (for instance the email field for a user)
 func (rh *HashMap) DelKey(elementid, key string) error {
-	conn := rh.pool.Get()
+	conn := rh.pool.Get(rh.dbindex)
 	_, err := conn.Do("HDEL", rh.id+":"+elementid, key)
 	return err
 }
 
 // Remove a hashmap (for instance a user)
 func (rh *HashMap) Del(elementid string) error {
-	conn := rh.pool.Get()
+	conn := rh.pool.Get(rh.dbindex)
 	_, err := conn.Do("DEL", rh.id+":"+elementid)
 	return err
 }
 
 // Remove this hashmap
 func (rh *HashMap) Remove() error {
-	conn := rh.pool.Get()
+	conn := rh.pool.Get(rh.dbindex)
 	_, err := conn.Do("DEL", rh.id)
 	return err
 }
@@ -256,19 +271,24 @@ func (rh *HashMap) Remove() error {
 
 // Create a new key/value
 func NewKeyValue(pool *ConnectionPool, id string) *KeyValue {
-	return &KeyValue{pool, id}
+	return &KeyValue{pool, id, 0}
+}
+
+// Select a different database
+func (rkv *KeyValue) SelectDatabase(dbindex int) {
+	rkv.dbindex = dbindex
 }
 
 // Set a key and value
 func (rkv *KeyValue) Set(key, value string) error {
-	conn := rkv.pool.Get()
+	conn := rkv.pool.Get(rkv.dbindex)
 	_, err := conn.Do("SET", rkv.id+":"+key, value)
 	return err
 }
 
 // Get a value given a key
 func (rkv *KeyValue) Get(key string) (string, error) {
-	conn := rkv.pool.Get()
+	conn := rkv.pool.Get(rkv.dbindex)
 	result, err := redis.String(conn.Do("GET", rkv.id+":"+key))
 	if err != nil {
 		return "", err
@@ -278,14 +298,14 @@ func (rkv *KeyValue) Get(key string) (string, error) {
 
 // Remove a key
 func (rkv *KeyValue) Del(key string) error {
-	conn := rkv.pool.Get()
+	conn := rkv.pool.Get(rkv.dbindex)
 	_, err := conn.Do("DEL", rkv.id+":"+key)
 	return err
 }
 
 // Remove this key/value
 func (rkv *KeyValue) Remove() error {
-	conn := rkv.pool.Get()
+	conn := rkv.pool.Get(rkv.dbindex)
 	_, err := conn.Do("DEL", rkv.id)
 	return err
 }
@@ -293,8 +313,8 @@ func (rkv *KeyValue) Remove() error {
 // --- Generic redis functions ---
 
 // Check if a key exists. The key can be a wildcard (ie. "user*").
-func hasKey(pool *ConnectionPool, wildcard string) (bool, error) {
-	conn := pool.Get()
+func hasKey(pool *ConnectionPool, wildcard string, dbindex int) (bool, error) {
+	conn := pool.Get(dbindex)
 	result, err := redis.Values(conn.Do("KEYS", wildcard))
 	if err != nil {
 		return false, err
