@@ -1,7 +1,8 @@
 package main
 
 import (
-	"fmt"
+	"log"
+
 	"github.com/xyproto/simpleredis"
 )
 
@@ -18,19 +19,19 @@ func main() {
 	// Add "hello" to the list
 	err := list.Add("hello")
 	if err != nil {
-		panic("Could not add an item to list! Is Redis up and running?")
+		log.Fatalln("Could not add an item to list! Is Redis up and running?")
 	}
 
 	// Get the last item in the list
 	item, err := list.GetLast()
 	if err != nil {
-		panic("Could not fetch the last item from the list!")
+		log.Fatalln("Could not fetch the last item from the list!")
 	}
-	fmt.Println("The value of the stored item is:", item)
+	log.Println("The value of the stored item is:", item)
 
 	// Remove the list
 	err = list.Remove()
 	if err != nil {
-		panic("Could not remove the list!")
+		log.Fatalln("Could not remove the list!")
 	}
 }
