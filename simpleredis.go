@@ -1,6 +1,7 @@
 package simpleredis
 
 import (
+	"errors"
 	"strconv"
 
 	"github.com/garyburd/redigo/redis"
@@ -47,6 +48,23 @@ func newRedisConnectionTo(hostColonPort string) (redis.Conn, error) {
 // Get a string from a list of results at a given position
 func getString(bi []interface{}, i int) string {
 	return string(bi[i].([]uint8))
+}
+
+// Test if the local Redis server is up and running
+func TestConnectionSimple() (err error) {
+	return TestConnection(defaultRedisServer)
+}
+
+// Test if a given Redis server at host:port is up and running
+func TestConnection(hostColonPort string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = errors.New("Could not connect to redis server: " + hostColonPort)
+		}
+	}()
+	conn, err := redis.Dial("tcp", hostColonPort)
+	conn.Close()
+	return err
 }
 
 /* --- ConnectionPool functions --- */

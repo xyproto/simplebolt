@@ -8,7 +8,14 @@ import (
 
 var pool *ConnectionPool
 
-func TestConnection(t *testing.T) {
+func TestLocalConnection(t *testing.T) {
+	err := TestConnectionSimple()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+}
+
+func TestConnectionPool(t *testing.T) {
 	pool = NewConnectionPool()
 }
 
