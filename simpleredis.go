@@ -36,7 +36,7 @@ const (
 
 // Connect to the local instance of Redis at port 6379
 func newRedisConnection() (redis.Conn, error) {
-	return redis.Dial("tcp", defaultRedisServer)
+	return newRedisConnectionTo(defaultRedisServer)
 }
 
 // Connect to host:port, host may be omitted, so ":6379" is valid
