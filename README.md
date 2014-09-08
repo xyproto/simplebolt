@@ -3,6 +3,8 @@ Simple Redis
 
 Easy way to use Redis from Go
 
+[![Build Status](https://travis-ci.org/xyproto/simpleredis.svg?branch=master)](https://travis-ci.org/xyproto/simpleredis)
+
 Uses [redigo](https://github.com/garyburd/redigo/redis)
 
 Online API Documentation
