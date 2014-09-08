@@ -1,11 +1,9 @@
 Simple Redis
 ============
 
-Easy way to use Redis from Go
-
 [![Build Status](https://travis-ci.org/xyproto/simpleredis.svg?branch=master)](https://travis-ci.org/xyproto/simpleredis)
 
-Uses [redigo](https://github.com/garyburd/redigo/redis)
+Easy way to use Redis from Go
 
 Online API Documentation
 ------------------------
@@ -17,6 +15,7 @@ Features and limitations
 
 * Supports simple use of lists, hashmaps, sets and key/values
 * Deals mainly with strings
+* Uses [redigo](https://github.com/garyburd/redigo/redis)
 
 Example use
 -----------
