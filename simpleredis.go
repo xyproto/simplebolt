@@ -77,6 +77,20 @@ func NewConnectionPool() *ConnectionPool {
 	return &pool
 }
 
+// Create a new connection pool given a host:port string
+func NewConnectionPoolHost(hostColonPort string) *ConnectionPool {
+	// Create a redis Pool
+	redisPool := redis.NewPool(
+		// Anonymous function for calling new RedisConnectionTo with the host:port
+		func() (redis.Conn, error) {
+			return newRedisConnectionTo(hostColonPort)
+		},
+		// Maximum number of idle connections to the redis database
+		maxIdleConnections)
+	pool := ConnectionPool(*redisPool)
+	return &pool
+}
+
 // Get one of the available connections from the connection pool, given a database index
 func (pool *ConnectionPool) Get(dbindex int) redis.Conn {
 	redisPool := redis.Pool(*pool)

@@ -19,6 +19,10 @@ func TestConnectionPool(t *testing.T) {
 	pool = NewConnectionPool()
 }
 
+func TestConnectionPoolHost(t *testing.T) {
+	pool = NewConnectionPoolHost("localhost:6379")
+}
+
 func TestList(t *testing.T) {
 	const (
 		listname = "abc123_test_test_test_123abc"
