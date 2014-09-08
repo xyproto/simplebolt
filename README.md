@@ -8,7 +8,7 @@ Easy way to use Redis from Go
 Online API Documentation
 ------------------------
 
-[go.pkgdoc.org](http://go.pkgdoc.org/github.com/xyproto/simpleredis)
+[godoc.org](http://godoc.org/github.com/xyproto/simpleredis)
 
 Features and limitations
 ------------------------
