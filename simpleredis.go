@@ -29,6 +29,9 @@ const (
 	Version = 0.1
 	// How many connections should stay ready for requests, at a maximum?
 	maxIdleConnections = 3
+)
+
+var (
 	// The default [url]:port that Redis is running at
 	defaultRedisServer = ":6379"
 )
@@ -71,6 +74,15 @@ func TestConnection(hostColonPort string) (err error) {
 
 // Create a new connection pool
 func NewConnectionPool() *ConnectionPool {
+	// The second argument is the maximum number of idle connections
+	redisPool := redis.NewPool(newRedisConnection, maxIdleConnections)
+	pool := ConnectionPool(*redisPool)
+	return &pool
+}
+
+// Create a new connection pool, given a host:port
+func NewConnectionPoolHost(server string) *ConnectionPool {
+	defaultRedisServer = server
 	// The second argument is the maximum number of idle connections
 	redisPool := redis.NewPool(newRedisConnection, maxIdleConnections)
 	pool := ConnectionPool(*redisPool)
