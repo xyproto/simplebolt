@@ -29,6 +29,9 @@ const (
 	Version = 0.1
 	// How many connections should stay ready for requests, at a maximum?
 	maxIdleConnections = 3
+)
+
+var (
 	// The default [url]:port that Redis is running at
 	defaultRedisServer = ":6379"
 )
