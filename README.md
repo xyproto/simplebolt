@@ -20,7 +20,7 @@ Features and limitations
 Example use
 -----------
 
-```go
+~~~go
 package main
 
 import (
@@ -30,8 +30,11 @@ import (
 )
 
 func main() {
-	// Create a connection pool, connects to the local redis server
+	// Create a connection pool, connect to the given redis server
 	pool := simpleredis.NewConnectionPool()
+
+	// Use this for connecting to a different redis host/port
+	// pool := simpleredis.NewConnectionPoolHost("localhost:6379")
 
 	// Close the connection pool when this function returns
 	defer pool.Close()
@@ -58,19 +61,18 @@ func main() {
 		log.Fatalln("Could not remove the list!")
 	}
 }
-```
+~~~
 
 Testing
 -------
 
-Redis must be up and running locally for the "go test" tests to work.
+Redis must be up and running locally for the `go test` tests to work.
 
 
 Version, license and author
 ---------------------------
 
-Version: 0.1
-License: MIT
-
-Alexander Rødseth <rodseth at gmail.com>
+* Version: 0.1
+* License: MIT
+* Author: Alexander Rødseth
 

@@ -7,8 +7,11 @@ import (
 )
 
 func main() {
-	// Create a connection pool, connects to the local redis server
+	// Create a connection pool, connect to the given redis server
 	pool := simpleredis.NewConnectionPool()
+
+	// Use this for connecting to a different redis host/port
+	// pool := simpleredis.NewConnectionPoolHost("localhost:6379")
 
 	// Close the connection pool when this function returns
 	defer pool.Close()
