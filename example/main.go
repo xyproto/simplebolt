@@ -7,6 +7,14 @@ import (
 )
 
 func main() {
+	// Check if the redis service is up
+	if err := simpleredis.TestConnection(); err != nil {
+		log.Fatalln("Could not connect to Redis. Is the service up and running?")
+	}
+
+	// Use instead for testing if a different host/port is up
+	// simpleredis.TestConnectionHost("localhost:6379")
+
 	// Create a connection pool, connect to the given redis server
 	pool := simpleredis.NewConnectionPool()
 
@@ -22,7 +30,7 @@ func main() {
 	// Add "hello" to the list
 	err := list.Add("hello")
 	if err != nil {
-		log.Fatalln("Could not add an item to list! Is Redis up and running?")
+		log.Fatalln("Could not add an item to list!")
 	}
 
 	// Get the last item in the list
