@@ -9,8 +9,7 @@ import (
 var pool *ConnectionPool
 
 func TestLocalConnection(t *testing.T) {
-	err := TestConnectionSimple()
-	if err != nil {
+	if err := TestConnection(); err != nil {
 		t.Errorf(err.Error())
 	}
 }
@@ -30,8 +29,7 @@ func TestList(t *testing.T) {
 	)
 	list := NewList(pool, listname)
 	list.SelectDatabase(1)
-	err := list.Add(testdata)
-	if err != nil {
+	if err := list.Add(testdata); err != nil {
 		t.Errorf("Error, could not add item to list! %s", err)
 	}
 	items, err := list.GetAll()
