@@ -85,7 +85,7 @@ Redis must be up and running locally for the `go test` tests to work.
 Version, license and author
 ---------------------------
 
-* Version: 0.2
+* Version: 1.0
 * License: MIT
 * Author: Alexander Rødseth
 

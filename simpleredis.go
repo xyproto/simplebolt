@@ -25,8 +25,8 @@ type (
 )
 
 const (
-	// Version number
-	Version = 0.1
+	// Version number. Stable API within major version numbers.
+	Version = 1.0
 	// How many connections should stay ready for requests, at a maximum?
 	maxIdleConnections = 3
 	// The default [url]:port that Redis is running at
@@ -51,12 +51,12 @@ func getString(bi []interface{}, i int) string {
 }
 
 // Test if the local Redis server is up and running
-func TestConnectionSimple() (err error) {
-	return TestConnection(defaultRedisServer)
+func TestConnection() (err error) {
+	return TestConnectionHost(defaultRedisServer)
 }
 
 // Test if a given Redis server at host:port is up and running
-func TestConnection(hostColonPort string) (err error) {
+func TestConnectionHost(hostColonPort string) (err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = errors.New("Could not connect to redis server: " + hostColonPort)
