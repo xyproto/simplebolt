@@ -27,10 +27,14 @@ type (
 const (
 	// Version number. Stable API within major version numbers.
 	Version = 1.0
-	// How many connections should stay ready for requests, at a maximum?
-	maxIdleConnections = 3
 	// The default [url]:port that Redis is running at
 	defaultRedisServer = ":6379"
+)
+
+var (
+	// How many connections should stay ready for requests, at a maximum?
+	// When an idle connection is used, new idle connections are created.
+	maxIdleConnections = 3
 )
 
 /* --- Helper functions --- */
@@ -89,6 +93,14 @@ func NewConnectionPoolHost(hostColonPort string) *ConnectionPool {
 		maxIdleConnections)
 	pool := ConnectionPool(*redisPool)
 	return &pool
+}
+
+// Set the number of maximum *idle* connections standing ready when
+// creating new connection pools. When an idle connection is used,
+// a new idle connection is created. The default is 3 and should be fine
+// for most cases.
+func SetMaxIdleConnections(maximum int) {
+	maxIdleConnections = maximum
 }
 
 // Get one of the available connections from the connection pool, given a database index
@@ -285,7 +297,7 @@ func (rh *HashMap) DelKey(elementid, key string) error {
 	return err
 }
 
-// Remove a hashmap (for instance a user)
+// Remove an element (for instance a user)
 func (rh *HashMap) Del(elementid string) error {
 	conn := rh.pool.Get(rh.dbindex)
 	_, err := conn.Do("DEL", rh.id+":"+elementid)
@@ -351,8 +363,5 @@ func hasKey(pool *ConnectionPool, wildcard string, dbindex int) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	if len(result) > 0 {
-		return true, nil
-	}
-	return false, nil
+	return len(result) > 0, nil
 }
