@@ -22,6 +22,15 @@ func TestConnectionPoolHost(t *testing.T) {
 	pool = NewConnectionPoolHost("localhost:6379")
 }
 
+// Tests with password "foobared" if the previous connection test
+// did not result in a connection that responds to PING.
+func TestConnectionPoolHostPassword(t *testing.T) {
+	if !pool.Ping() {
+		// Try connecting with the default password
+		pool = NewConnectionPoolHost("foobared@localhost:6379")
+	}
+}
+
 func TestList(t *testing.T) {
 	const (
 		listname = "abc123_test_test_test_123abc"
@@ -42,5 +51,12 @@ func TestList(t *testing.T) {
 	err = list.Remove()
 	if err != nil {
 		t.Errorf("Error, could not remove list! %s", err)
+	}
+}
+
+func TestTwoFields(t *testing.T) {
+	test, test23, ok := twoFields("test1@test2@test3", "@")
+	if ok && ((test != "test1") || (test23 != "test2@test3")) {
+		t.Error("Error in twoFields functions")
 	}
 }

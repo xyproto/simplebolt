@@ -3,6 +3,7 @@ package simpleredis
 import (
 	"errors"
 	"strconv"
+	"strings"
 
 	"github.com/garyburd/redigo/redis"
 )
@@ -44,8 +45,13 @@ func newRedisConnection() (redis.Conn, error) {
 	return newRedisConnectionTo(defaultRedisServer)
 }
 
-// Connect to host:port, host may be omitted, so ":6379" is valid
+// Connect to host:port, host may be omitted, so ":6379" is valid.
+// Will not try to AUTH with any given password (password@host:port).
 func newRedisConnectionTo(hostColonPort string) (redis.Conn, error) {
+	// Discard the password, if provided
+	if _, theRest, ok := twoFields(hostColonPort, "@"); ok {
+		hostColonPort = theRest
+	}
 	return redis.Dial("tcp", hostColonPort)
 }
 
@@ -59,15 +65,17 @@ func TestConnection() (err error) {
 	return TestConnectionHost(defaultRedisServer)
 }
 
-// Test if a given Redis server at host:port is up and running
+// Test if a given Redis server at host:port is up and running.
+// Does not try to PING or AUTH.
 func TestConnectionHost(hostColonPort string) (err error) {
+	// Connect to the given host:port
+	conn, err := newRedisConnectionTo(hostColonPort)
+	defer conn.Close()
 	defer func() {
 		if r := recover(); r != nil {
 			err = errors.New("Could not connect to redis server: " + hostColonPort)
 		}
 	}()
-	conn, err := redis.Dial("tcp", hostColonPort)
-	conn.Close()
 	return err
 }
 
@@ -81,13 +89,35 @@ func NewConnectionPool() *ConnectionPool {
 	return &pool
 }
 
-// Create a new connection pool given a host:port string
+// Split a string into two parts, given a delimiter.
+// Returns the two parts and true if it works out.
+func twoFields(s, delim string) (string, string, bool) {
+	if strings.Count(s, delim) != 1 {
+		return s, "", false
+	}
+	fields := strings.Split(s, delim)
+	return fields[0], fields[1], true
+}
+
+// Create a new connection pool given a host:port string.
+// A password may be supplied as well, on the form "password@host:port".
 func NewConnectionPoolHost(hostColonPort string) *ConnectionPool {
 	// Create a redis Pool
 	redisPool := redis.NewPool(
 		// Anonymous function for calling new RedisConnectionTo with the host:port
 		func() (redis.Conn, error) {
-			return newRedisConnectionTo(hostColonPort)
+			conn, err := newRedisConnectionTo(hostColonPort)
+			if err != nil {
+				return nil, err
+			}
+			// If a password is given, use it to authenticate
+			if password, _, ok := twoFields(hostColonPort, "@"); ok {
+				if _, err := conn.Do("AUTH", password); err != nil {
+					conn.Close()
+					return nil, err
+				}
+			}
+			return conn, err
 		},
 		// Maximum number of idle connections to the redis database
 		maxIdleConnections)
@@ -113,6 +143,14 @@ func (pool *ConnectionPool) Get(dbindex int) redis.Conn {
 		conn.Do("SELECT", strconv.Itoa(dbindex))
 	}
 	return conn
+}
+
+// Ping the server by sending a PING command
+func (pool *ConnectionPool) Ping() (pong bool) {
+	redisPool := redis.Pool(*pool)
+	conn := redisPool.Get()
+	_, err := conn.Do("PING")
+	return err == nil
 }
 
 // Close down the connection pool
