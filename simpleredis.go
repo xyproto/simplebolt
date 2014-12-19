@@ -112,9 +112,11 @@ func NewConnectionPoolHost(hostColonPort string) *ConnectionPool {
 			}
 			// If a password is given, use it to authenticate
 			if password, _, ok := twoFields(hostColonPort, "@"); ok {
-				if _, err := conn.Do("AUTH", password); err != nil {
-					conn.Close()
-					return nil, err
+				if password != "" {
+					if _, err := conn.Do("AUTH", password); err != nil {
+						conn.Close()
+						return nil, err
+					}
 				}
 			}
 			return conn, err
