@@ -50,8 +50,9 @@ func newRedisConnection() (redis.Conn, error) {
 func newRedisConnectionTo(hostColonPort string) (redis.Conn, error) {
 	// Discard the password, if provided
 	if _, theRest, ok := twoFields(hostColonPort, "@"); ok {
-		return redis.Dial("tcp", theRest)
+		hostColonPort = theRest
 	}
+	hostColonPort = strings.TrimSpace(hostColonPort)
 	return redis.Dial("tcp", hostColonPort)
 }
 
