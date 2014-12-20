@@ -14,6 +14,12 @@ func TestLocalConnection(t *testing.T) {
 	}
 }
 
+func TestRemoteConnection(t *testing.T) {
+	if err := TestConnectionHost("foobared@ :6379"); err != nil {
+		t.Errorf(err.Error())
+	}
+}
+
 func TestConnectionPool(t *testing.T) {
 	pool = NewConnectionPool()
 }
