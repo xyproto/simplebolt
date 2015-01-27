@@ -1,3 +1,4 @@
+// Easy way to use Redis from Go.
 package simpleredis
 
 import (

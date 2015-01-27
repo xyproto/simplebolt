@@ -4,8 +4,6 @@ import (
 	"testing"
 )
 
-// TODO: Add tests for all the datatypes and, ideally, all the available functions
-
 var pool *ConnectionPool
 
 func TestLocalConnection(t *testing.T) {
