@@ -348,11 +348,22 @@ func (rh *HashMap) Del(elementid string) error {
 	return err
 }
 
-// Remove this hashmap
+// Remove this hashmap (all keys that starts with this hashmap id and a colon)
 func (rh *HashMap) Remove() error {
 	conn := rh.pool.Get(rh.dbindex)
-	_, err := conn.Do("DEL", rh.id)
-	return err
+	// Find all hashmap keys that starts with rh.id+":"
+	results, err := redis.Values(conn.Do("KEYS", rh.id+":*"))
+	if err != nil {
+		return err
+	}
+	// For each key id
+	for i := 0; i < len(results); i++ {
+		// Delete this key
+		if _, err = conn.Do("DEL", getString(results, i)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 /* --- KeyValue functions --- */
