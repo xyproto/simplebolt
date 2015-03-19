@@ -58,6 +58,28 @@ func TestList(t *testing.T) {
 	}
 }
 
+func TestRemove(t *testing.T) {
+	const (
+		kvname    = "abc123_test_test_test_123abc"
+		testkey   = "sdsdf234234"
+		testvalue = "asdfasdf1234"
+	)
+	kv := NewKeyValue(pool, kvname)
+	kv.SelectDatabase(1)
+	if err := kv.Set(testkey, testvalue); err != nil {
+		t.Errorf("Error, could not set key and value! %s", err.Error())
+	}
+	if val, err := kv.Get(testkey); err != nil {
+		t.Errorf("Error, could not get key! %s", err.Error())
+	} else if val != testvalue {
+		t.Errorf("Error, wrong value! %s != %s", val, testvalue)
+	}
+	kv.Remove()
+	if _, err := kv.Get(testkey); err == nil {
+		t.Errorf("Error, could get key! %s", err.Error())
+	}
+}
+
 func TestTwoFields(t *testing.T) {
 	test, test23, ok := twoFields("test1@test2@test3", "@")
 	if ok && ((test != "test1") || (test23 != "test2@test3")) {

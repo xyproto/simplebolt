@@ -405,8 +405,19 @@ func (rkv *KeyValue) Del(key string) error {
 // Remove this key/value
 func (rkv *KeyValue) Remove() error {
 	conn := rkv.pool.Get(rkv.dbindex)
-	_, err := conn.Do("DEL", rkv.id)
-	return err
+	// Find all keys that starts with rkv.id+":"
+	results, err := redis.Values(conn.Do("KEYS", rkv.id+":*"))
+	if err != nil {
+		return err
+	}
+	// For each key id
+	for i := 0; i < len(results); i++ {
+		// Delete this key
+		if _, err = conn.Do("DEL", getString(results, i)); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // --- Generic redis functions ---
