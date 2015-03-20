@@ -80,6 +80,47 @@ func TestRemove(t *testing.T) {
 	}
 }
 
+func TestInc(t *testing.T) {
+	const (
+		kvname     = "kv_234_test_test_test"
+		testkey    = "key_234_test_test_test"
+		testvalue0 = "9"
+		testvalue1 = "10"
+		testvalue2 = "1"
+	)
+	kv := NewKeyValue(pool, kvname)
+	kv.SelectDatabase(1)
+	if err := kv.Set(testkey, testvalue0); err != nil {
+		t.Errorf("Error, could not set key and value! %s", err.Error())
+	}
+	if val, err := kv.Get(testkey); err != nil {
+		t.Errorf("Error, could not get key! %s", err.Error())
+	} else if val != testvalue0 {
+		t.Errorf("Error, wrong value! %s != %s", val, testvalue0)
+	}
+	kv.Inc(testkey)
+	if val, err := kv.Get(testkey); err != nil {
+		t.Errorf("Error, could not get key! %s", err.Error())
+	} else if val != testvalue1 {
+		t.Errorf("Error, wrong value! %s != %s", val, testvalue1)
+	}
+	kv.Remove()
+	if _, err := kv.Get(testkey); err == nil {
+		t.Errorf("Error, could get key! %s", err.Error())
+	}
+	// Creates "0" and increases the value with 1
+	kv.Inc(testkey)
+	if val, err := kv.Get(testkey); err != nil {
+		t.Errorf("Error, could not get key! %s", err.Error())
+	} else if val != testvalue2 {
+		t.Errorf("Error, wrong value! %s != %s", val, testvalue2)
+	}
+	kv.Remove()
+	if _, err := kv.Get(testkey); err == nil {
+		t.Errorf("Error, could get key! %s", err.Error())
+	}
+}
+
 func TestTwoFields(t *testing.T) {
 	test, test23, ok := twoFields("test1@test2@test3", "@")
 	if ok && ((test != "test1") || (test23 != "test2@test3")) {
