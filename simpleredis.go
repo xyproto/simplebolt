@@ -405,13 +405,13 @@ func (rkv *KeyValue) Del(key string) error {
 // Increase the value of a key, returns the new value
 // Returns an empty string if there were errors,
 // or "0" if the key does not already exist.
-func (rkv *KeyValue) Inc(key string) string {
+func (rkv *KeyValue) Inc(key string) (string, error) {
 	conn := rkv.pool.Get(rkv.dbindex)
-	result, err := redis.String(conn.Do("INCR", rkv.id+":"+key))
+	result, err := redis.Int64(conn.Do("INCR", rkv.id+":"+key))
 	if err != nil {
-		return ""
+		return "0", err
 	}
-	return result
+	return strconv.FormatInt(result, 10), nil
 }
 
 // Remove this key/value

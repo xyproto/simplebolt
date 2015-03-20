@@ -98,11 +98,16 @@ func TestInc(t *testing.T) {
 	} else if val != testvalue0 {
 		t.Errorf("Error, wrong value! %s != %s", val, testvalue0)
 	}
-	kv.Inc(testkey)
+	incval, err := kv.Inc(testkey)
+	if err != nil {
+		t.Errorf("Error, could not INCR key! %s", err.Error())
+	}
 	if val, err := kv.Get(testkey); err != nil {
 		t.Errorf("Error, could not get key! %s", err.Error())
 	} else if val != testvalue1 {
 		t.Errorf("Error, wrong value! %s != %s", val, testvalue1)
+	} else if incval != testvalue1 {
+		t.Errorf("Error, wrong inc value! %s != %s", incval, testvalue1)
 	}
 	kv.Remove()
 	if _, err := kv.Get(testkey); err == nil {
