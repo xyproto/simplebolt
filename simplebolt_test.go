@@ -1,39 +1,8 @@
-package simpleredis
+package simplebolt
 
 import (
 	"testing"
 )
-
-var pool *ConnectionPool
-
-func TestLocalConnection(t *testing.T) {
-	if err := TestConnection(); err != nil {
-		t.Errorf(err.Error())
-	}
-}
-
-func TestRemoteConnection(t *testing.T) {
-	if err := TestConnectionHost("foobared@ :6379"); err != nil {
-		t.Errorf(err.Error())
-	}
-}
-
-func TestConnectionPool(t *testing.T) {
-	pool = NewConnectionPool()
-}
-
-func TestConnectionPoolHost(t *testing.T) {
-	pool = NewConnectionPoolHost("localhost:6379")
-}
-
-// Tests with password "foobared" if the previous connection test
-// did not result in a connection that responds to PING.
-func TestConnectionPoolHostPassword(t *testing.T) {
-	if !pool.Ping() {
-		// Try connecting with the default password
-		pool = NewConnectionPoolHost("foobared@localhost:6379")
-	}
-}
 
 func TestList(t *testing.T) {
 	const (
@@ -41,7 +10,6 @@ func TestList(t *testing.T) {
 		testdata = "123abc"
 	)
 	list := NewList(pool, listname)
-	list.SelectDatabase(1)
 	if err := list.Add(testdata); err != nil {
 		t.Errorf("Error, could not add item to list! %s", err.Error())
 	}
@@ -65,7 +33,6 @@ func TestRemove(t *testing.T) {
 		testvalue = "asdfasdf1234"
 	)
 	kv := NewKeyValue(pool, kvname)
-	kv.SelectDatabase(1)
 	if err := kv.Set(testkey, testvalue); err != nil {
 		t.Errorf("Error, could not set key and value! %s", err.Error())
 	}
@@ -89,7 +56,6 @@ func TestInc(t *testing.T) {
 		testvalue2 = "1"
 	)
 	kv := NewKeyValue(pool, kvname)
-	kv.SelectDatabase(1)
 	if err := kv.Set(testkey, testvalue0); err != nil {
 		t.Errorf("Error, could not set key and value! %s", err.Error())
 	}

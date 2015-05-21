@@ -2,7 +2,9 @@
 package simplebolt
 
 import (
-	"strconv"
+	//"strconv"
+	"fmt"
+	"log"
 	"strings"
 
 	"github.com/boltdb/bolt"
@@ -10,12 +12,13 @@ import (
 
 // Common for each of the Bolt buckets used here
 type boltBucket struct {
-	db     *bolt.DB
-	name   []byte
+	db *Database
+	//bucket *bolt.Bucket
+	name []byte
 }
 
 type (
-	Database  bolt.DB
+	Database bolt.DB
 
 	List     boltBucket
 	Set      boltBucket
@@ -26,24 +29,22 @@ type (
 const (
 	// Version number. Stable API within major version numbers.
 	Version = 1.0
-	// The default [url]:port that Bolt is running at
-	defaultBoltFilename = "bolt.db"
 )
 
 /* --- Database functions --- */
 
 // Create a new bolt database
-func NewDatabase() *Database {
-	db, err := bolt.Open(defaultFilename, 0644)
+func New(filename string) *Database {
+	db, err := bolt.Open(filename, 0644)
 	if err != nil {
 		log.Fatalln(err)
 	}
-	return &db
+	return (*Database)(db)
 }
 
 // Close the database
 func (db *Database) Close() {
-	db.Close()
+	(*bolt.DB)(db).Close()
 }
 
 // Split a string into two parts, given a delimiter.
@@ -56,59 +57,59 @@ func twoFields(s, delim string) (string, string, bool) {
 	return fields[0], fields[1], true
 }
 
-/* --- List functions --- */
-
-// Create a new list
-func NewList(db *Database, id string) *List {
-	return &List{db, id, 0}
-}
-
-// Add an element to the list
-func (rl *List) Add(value string) error {
-	conn := rl.db.Get(rl.dbindex)
-	_, err := conn.Do("RPUSH", rl.id, value)
-	return err
-}
-
-// Get all elements of a list
-func (rl *List) GetAll() ([]string, error) {
-	conn := rl.db.Get(rl.dbindex)
-	result, err := bolt.Values(conn.Do("LRANGE", rl.id, "0", "-1"))
-	strs := make([]string, len(result))
-	for i := 0; i < len(result); i++ {
-		strs[i] = getString(result, i)
-	}
-	return strs, err
-}
-
-// Get the last element of a list
-func (rl *List) GetLast() (string, error) {
-	conn := rl.db.Get(rl.dbindex)
-	result, err := bolt.Values(conn.Do("LRANGE", rl.id, "-1", "-1"))
-	if len(result) == 1 {
-		return getString(result, 0), err
-	}
-	return "", err
-}
-
-// Get the last N elements of a list
-func (rl *List) GetLastN(n int) ([]string, error) {
-	conn := rl.db.Get(rl.dbindex)
-	result, err := bolt.Values(conn.Do("LRANGE", rl.id, "-"+strconv.Itoa(n), "-1"))
-	strs := make([]string, len(result))
-	for i := 0; i < len(result); i++ {
-		strs[i] = getString(result, i)
-	}
-	return strs, err
-}
-
-// Remove this list
-func (rl *List) Remove() error {
-	conn := rl.db.Get(rl.dbindex)
-	_, err := conn.Do("DEL", rl.id)
-	return err
-}
-
+///* --- List functions --- */
+//
+//// Create a new list
+//func NewList(db *Database, id string) *List {
+//	return &List{db, []byte(id)}
+//}
+//
+//// Add an element to the list
+//func (rl *List) Add(value string) error {
+//	conn := rl.db.Get(rl.dbindex)
+//	_, err := conn.Do("RPUSH", rl.id, value)
+//	return err
+//}
+//
+//// Get all elements of a list
+//func (rl *List) GetAll() ([]string, error) {
+//	conn := rl.db.Get(rl.dbindex)
+//	result, err := bolt.Values(conn.Do("LRANGE", rl.id, "0", "-1"))
+//	strs := make([]string, len(result))
+//	for i := 0; i < len(result); i++ {
+//		strs[i] = getString(result, i)
+//	}
+//	return strs, err
+//}
+//
+//// Get the last element of a list
+//func (rl *List) GetLast() (string, error) {
+//	conn := rl.db.Get(rl.dbindex)
+//	result, err := bolt.Values(conn.Do("LRANGE", rl.id, "-1", "-1"))
+//	if len(result) == 1 {
+//		return getString(result, 0), err
+//	}
+//	return "", err
+//}
+//
+//// Get the last N elements of a list
+//func (rl *List) GetLastN(n int) ([]string, error) {
+//	conn := rl.db.Get(rl.dbindex)
+//	result, err := bolt.Values(conn.Do("LRANGE", rl.id, "-"+strconv.Itoa(n), "-1"))
+//	strs := make([]string, len(result))
+//	for i := 0; i < len(result); i++ {
+//		strs[i] = getString(result, i)
+//	}
+//	return strs, err
+//}
+//
+//// Remove this list
+//func (rl *List) Remove() error {
+//	conn := rl.db.Get(rl.dbindex)
+//	_, err := conn.Do("DEL", rl.id)
+//	return err
+//}
+//
 ///* --- Set functions --- */
 //
 //// Create a new set
@@ -241,31 +242,42 @@ func (rl *List) Remove() error {
 //	}
 //	return nil
 //}
-//
-///* --- KeyValue functions --- */
-//
-//// Create a new key/value
-//func NewKeyValue(db *Database, id string) *KeyValue {
-//	return &KeyValue{db, id, 0}
-//}
-//
-//// Set a key and value
-//func (rkv *KeyValue) Set(key, value string) error {
-//	conn := rkv.db.Get(rkv.dbindex)
-//	_, err := conn.Do("SET", rkv.id+":"+key, value)
-//	return err
-//}
-//
-//// Get a value given a key
-//func (rkv *KeyValue) Get(key string) (string, error) {
-//	conn := rkv.db.Get(rkv.dbindex)
-//	result, err := bolt.String(conn.Do("GET", rkv.id+":"+key))
-//	if err != nil {
-//		return "", err
-//	}
-//	return result, nil
-//}
-//
+
+/* --- KeyValue functions --- */
+
+// Create a new key/value
+func NewKeyValue(db *Database, id string) *KeyValue {
+	name := []byte(id)
+	(*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
+		if _, err := tx.CreateBucketIfNotExists(name); err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		return nil
+	})
+	return &KeyValue{db, name}
+}
+
+// Set a key and value
+func (kv *KeyValue) Set(key, value string) error {
+	return (*bolt.DB)(kv.db).Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(kv.name)
+		return bucket.Put([]byte(key), []byte(value))
+	})
+}
+
+// Get a value given a key
+func (kv *KeyValue) Get(key string) (val string, err error) {
+	err = (*bolt.DB)(kv.db).View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(kv.name)
+		if bucket == nil {
+			return fmt.Errorf("Bucket %q not found!", kv.name)
+		}
+		val = string(bucket.Get([]byte(key)))
+		return nil
+	})
+	return
+}
+
 //// Remove a key
 //func (rkv *KeyValue) Del(key string) error {
 //	conn := rkv.db.Get(rkv.dbindex)
