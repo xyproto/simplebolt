@@ -1,8 +1,6 @@
 Simple Bolt
 ============
 
-WORK IN PROGRESS!
-
 [![Build Status](https://travis-ci.org/xyproto/simplebolt.svg?branch=master)](https://travis-ci.org/xyproto/simplebolt)
 [![GoDoc](https://godoc.org/github.com/xyproto/simplebolt?status.svg)](http://godoc.org/github.com/xyproto/simplebolt)
 
@@ -30,28 +28,34 @@ package main
 
 import (
 	"log"
-	"fmt"
 
 	"github.com/xyproto/simplebolt"
 )
 
 func main() {
+	// New bolt database
 	db := simplebolt.New("bolt.db")
 	defer db.Close()
 
-	kv := simplebolt.NewKeyValue(db, "fruit")
-	if err := kv.Set("banana", "yes"); err != nil {
-		log.Println("Could not set a key+value.")
-		log.Fatalln(err)
+	// Create a list named "greetings"
+	list := simplebolt.NewList(db, "greetings")
+
+	// Add "hello" to the list, check if there are errors
+	if list.Add("hello") != nil {
+		log.Fatalln("Could not add an item to list!")
 	}
 
-	val, err := kv.Get("banana")
-	if err != nil {
-		log.Println("Could not get value.")
-		log.Fatalln(err)
+	// Get the last item of the list
+	if item, err := list.GetLast(); err != nil {
+		log.Fatalln("Could not fetch the last item from the list!")
+	} else {
+		log.Println("The value of the stored item is:", item)
 	}
-	fmt.Println("Got it:", val)
 
+	// Remove the list
+	if list.Remove() != nil {
+		log.Fatalln("Could not remove the list!")
+	}
 }
 ~~~
 
