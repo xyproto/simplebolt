@@ -1,17 +1,18 @@
 Simple Bolt
 ============
 
+WORK IN PROGRESS!
+
 [![Build Status](https://travis-ci.org/xyproto/simpleredis.svg?branch=master)](https://travis-ci.org/xyproto/simpleredis)
-[![GoDoc](https://godoc.org/github.com/xyproto/simpleredis?status.svg)](http://godoc.org/github.com/xyproto/simpleredis)
+[![GoDoc](https://godoc.org/github.com/xyproto/simplebolt?status.svg)](http://godoc.org/github.com/xyproto/simplebolt)
 
-
-Easy way to use Bolt from Go.
+A way to use Bolt that is similar to [simpleredis](https://github.com/xyproto/simpleredis).
 
 
 Online API Documentation
 ------------------------
 
-[godoc.org](http://godoc.org/github.com/xyproto/simpleredis)
+[godoc.org](http://godoc.org/github.com/xyproto/simplebolt)
 
 
 Features and limitations
@@ -30,58 +31,30 @@ package main
 
 import (
 	"log"
+	"fmt"
 
-	"github.com/xyproto/simpleredis"
+	"github.com/xyproto/simplebolt"
 )
 
 func main() {
-	// Check if the redis service is up
-	if err := simpleredis.TestConnection(); err != nil {
-		log.Fatalln("Could not connect to Bolt. Is the service up and running?")
+	db := simplebolt.New("bolt.db")
+	defer db.Close()
+
+	kv := simplebolt.NewKeyValue(db, "fruit")
+	if err := kv.Set("banana", "yes"); err != nil {
+		log.Println("Could not set a key+value.")
+		log.Fatalln(err)
 	}
 
-	// Use instead for testing if a different host/port is up.
-	// simpleredis.TestConnectionHost("localhost:6379")
-
-	// Create a connection pool, connect to the given redis server
-	pool := simpleredis.NewConnectionPool()
-
-	// Use this for connecting to a different redis host/port
-	// pool := simpleredis.NewConnectionPoolHost("localhost:6379")
-
-	// For connecting to a different redis host/port, with a password
-	// pool := simpleredis.NewConnectionPoolHost("password@redishost:6379")
-
-	// Close the connection pool right after this function returns
-	defer pool.Close()
-
-	// Create a list named "greetings"
-	list := simpleredis.NewList(pool, "greetings")
-
-	// Add "hello" to the list, check if there are errors
-	if list.Add("hello") != nil {
-		log.Fatalln("Could not add an item to list!")
+	val, err := kv.Get("banana")
+	if err != nil {
+		log.Println("Could not get value.")
+		log.Fatalln(err)
 	}
+	fmt.Println("Got it:", val)
 
-	// Get the last item of the list
-	if item, err := list.GetLast(); err != nil {
-		log.Fatalln("Could not fetch the last item from the list!")
-	} else {
-		log.Println("The value of the stored item is:", item)
-	}
-
-	// Remove the list
-	if list.Remove() != nil {
-		log.Fatalln("Could not remove the list!")
-	}
 }
 ~~~
-
-Testing
--------
-
-Bolt must be up and running locally for the `go test` tests to work.
-
 
 Version, license and author
 ---------------------------

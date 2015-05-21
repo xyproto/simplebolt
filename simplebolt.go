@@ -13,7 +13,6 @@ import (
 // Common for each of the Bolt buckets used here
 type boltBucket struct {
 	db *Database
-	//bucket *bolt.Bucket
 	name []byte
 }
 
@@ -245,7 +244,7 @@ func twoFields(s, delim string) (string, string, bool) {
 
 /* --- KeyValue functions --- */
 
-// Create a new key/value
+// Create a new key/value if it does not already exist
 func NewKeyValue(db *Database, id string) *KeyValue {
 	name := []byte(id)
 	(*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
