@@ -41,5 +41,8 @@ func main() {
 
 	fmt.Println("fnu", fnu)
 
+	val, err = kv.Get("doesnotexist")
+	fmt.Println("does not exist", val, err)
+
 	kv.Remove()
 }

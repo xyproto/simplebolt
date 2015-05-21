@@ -2,6 +2,7 @@
 package simplebolt
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -28,6 +29,11 @@ type (
 const (
 	// Version number. Stable API within major version numbers.
 	Version = 1.0
+)
+
+var (
+	BucketNotFound = errors.New("Bucket not found!")
+	KeyNotFound    = errors.New("Key not found!")
 )
 
 /* --- Database functions --- */
@@ -265,13 +271,18 @@ func (kv *KeyValue) Set(key, value string) error {
 }
 
 // Get a value given a key
+// Returns an error if the key was not found
 func (kv *KeyValue) Get(key string) (val string, err error) {
 	err = (*bolt.DB)(kv.db).View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(kv.name)
 		if bucket == nil {
-			return fmt.Errorf("Bucket %q not found!", kv.name)
+			return BucketNotFound
 		}
-		val = string(bucket.Get([]byte(key)))
+		byteval := bucket.Get([]byte(key))
+		if byteval == nil {
+			return KeyNotFound
+		}
+		val = string(byteval)
 		return nil
 	})
 	return
@@ -282,7 +293,7 @@ func (kv *KeyValue) Del(key string) error {
 	return (*bolt.DB)(kv.db).Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(kv.name)
 		if bucket == nil {
-			return fmt.Errorf("Bucket %q not found!", kv.name)
+			return BucketNotFound
 		}
 		return bucket.Delete([]byte(key))
 	})
