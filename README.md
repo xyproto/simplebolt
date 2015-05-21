@@ -20,7 +20,6 @@ Features and limitations
 
 * Supports simple use of lists, hashmaps, sets and key/values
 * Deals mainly with strings
-* Uses the [redigo](https://github.com/garyburd/redigo) package
 
 
 Example usage

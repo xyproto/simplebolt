@@ -363,7 +363,7 @@ func (h *HashMap) Get(elementid, key string) (val string, err error) {
 }
 
 //// Check if a given elementid + key is in the hash map
-//func (rh *HashMap) Has(elementid, key string) (bool, error) {
+//func (h *HashMap) Has(elementid, key string) (bool, error) {
 //	conn := rh.db.Get(rh.dbindex)
 //	retval, err := conn.Do("HEXISTS", rh.id+":"+elementid, key)
 //	if err != nil {
@@ -373,13 +373,13 @@ func (h *HashMap) Get(elementid, key string) (val string, err error) {
 //}
 //
 //// Check if a given elementid exists as a hash map at all
-//func (rh *HashMap) Exists(elementid string) (bool, error) {
+//func (h *HashMap) Exists(elementid string) (bool, error) {
 //	// TODO: key is not meant to be a wildcard, check for "*"
 //	return hasKey(rh.db, rh.id+":"+elementid, rh.dbindex)
 //}
 //
 //// Get all elementid's for all hash elements
-//func (rh *HashMap) GetAll() ([]string, error) {
+//func (h *HashMap) GetAll() ([]string, error) {
 //	conn := rh.db.Get(rh.dbindex)
 //	result, err := bolt.Values(conn.Do("KEYS", rh.id+":*"))
 //	strs := make([]string, len(result))
@@ -391,21 +391,21 @@ func (h *HashMap) Get(elementid, key string) (val string, err error) {
 //}
 //
 //// Remove a key for an entry in a hashmap (for instance the email field for a user)
-//func (rh *HashMap) DelKey(elementid, key string) error {
+//func (h *HashMap) DelKey(elementid, key string) error {
 //	conn := rh.db.Get(rh.dbindex)
 //	_, err := conn.Do("HDEL", rh.id+":"+elementid, key)
 //	return err
 //}
 //
 //// Remove an element (for instance a user)
-//func (rh *HashMap) Del(elementid string) error {
+//func (h *HashMap) Del(elementid string) error {
 //	conn := rh.db.Get(rh.dbindex)
 //	_, err := conn.Do("DEL", rh.id+":"+elementid)
 //	return err
 //}
 //
 //// Remove this hashmap (all keys that starts with this hashmap id and a colon)
-//func (rh *HashMap) Remove() error {
+//func (h *HashMap) Remove() error {
 //	conn := rh.db.Get(rh.dbindex)
 //	// Find all hashmap keys that starts with rh.id+":"
 //	results, err := bolt.Values(conn.Do("KEYS", rh.id+":*"))
