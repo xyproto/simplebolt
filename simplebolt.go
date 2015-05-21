@@ -32,8 +32,8 @@ const (
 )
 
 var (
-	BucketNotFound = errors.New("Bucket not found!")
-	KeyNotFound    = errors.New("Key not found!")
+	ErrBucketNotFound = errors.New("Bucket not found!")
+	ErrKeyNotFound    = errors.New("Key not found!")
 )
 
 /* --- Database functions --- */
@@ -62,59 +62,86 @@ func twoFields(s, delim string) (string, string, bool) {
 	return fields[0], fields[1], true
 }
 
-///* --- List functions --- */
-//
-//// Create a new list
-//func NewList(db *Database, id string) *List {
-//	return &List{db, []byte(id)}
-//}
-//
-//// Add an element to the list
-//func (rl *List) Add(value string) error {
-//	conn := rl.db.Get(rl.dbindex)
-//	_, err := conn.Do("RPUSH", rl.id, value)
-//	return err
-//}
-//
-//// Get all elements of a list
-//func (rl *List) GetAll() ([]string, error) {
-//	conn := rl.db.Get(rl.dbindex)
-//	result, err := bolt.Values(conn.Do("LRANGE", rl.id, "0", "-1"))
-//	strs := make([]string, len(result))
-//	for i := 0; i < len(result); i++ {
-//		strs[i] = getString(result, i)
-//	}
-//	return strs, err
-//}
-//
-//// Get the last element of a list
-//func (rl *List) GetLast() (string, error) {
-//	conn := rl.db.Get(rl.dbindex)
-//	result, err := bolt.Values(conn.Do("LRANGE", rl.id, "-1", "-1"))
-//	if len(result) == 1 {
-//		return getString(result, 0), err
-//	}
-//	return "", err
-//}
-//
-//// Get the last N elements of a list
-//func (rl *List) GetLastN(n int) ([]string, error) {
-//	conn := rl.db.Get(rl.dbindex)
-//	result, err := bolt.Values(conn.Do("LRANGE", rl.id, "-"+strconv.Itoa(n), "-1"))
-//	strs := make([]string, len(result))
-//	for i := 0; i < len(result); i++ {
-//		strs[i] = getString(result, i)
-//	}
-//	return strs, err
-//}
-//
-//// Remove this list
-//func (rl *List) Remove() error {
-//	conn := rl.db.Get(rl.dbindex)
-//	_, err := conn.Do("DEL", rl.id)
-//	return err
-//}
-//
+/* --- List functions --- */
+
+// Create a new list
+func NewList(db *Database, id string) *List {
+	name := []byte(id)
+	(*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
+		if _, err := tx.CreateBucketIfNotExists(name); err != nil {
+			return fmt.Errorf("create bucket: %s", err)
+		}
+		return nil
+	})
+	return &List{db, name}
+
+}
+
+// Add an element to the list
+func (l *List) Add(value string) error {
+	return (*bolt.DB)(l.db).Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(l.name)
+		n, _ := bucket.NextSequence()
+		key := strconv.Itoa(n)
+		return bucket.Put([]byte(key), []byte(value))
+	})
+}
+
+// Get all elements of a list
+func (l *List) GetAll() (results []string, err error) {
+	return results, (*bolt.DB)(l.db).View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(l.name)
+		return bucket.ForEach(func(key, value []byte) error {
+			results = append(results, string(value))
+			return nil
+		})
+	})
+}
+
+// Get the last element of a list
+func (l *List) GetLast() (result string, err error) {
+	return result, (*bolt.DB)(l.db).View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(l.name)
+		cursor := bucket.Cursor()
+		_, value := cursor.Last()
+		result = string(value)
+		return nil
+	})
+}
+
+// Get the last N elements of a list
+func (l *List) GetLastN(n int) (results []string, err error) {
+	return results, (*bolt.DB)(l.db).View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(l.name)
+		var size int64 = 0
+		bucket.ForEach(func(key, value []byte) error {
+			size++
+			return nil
+		})
+		if size < int64(n) {
+			return errors.New("Too few items in list")
+		}
+		// Ok, fetch the n last items. startPos is counting from 0.
+		var startPos int64 = size - int64(n)
+		var i int64 = 0
+		bucket.ForEach(func(key, value []byte) error {
+			if i >= startPos {
+				results = append(results, string(value))
+			}
+			i++
+			return nil
+		})
+		return nil
+	})
+}
+
+// Remove this list
+func (l *List) Remove() error {
+	return (*bolt.DB)(l.db).Update(func(tx *bolt.Tx) error {
+		return tx.DeleteBucket([]byte(l.name))
+	})
+}
+
 ///* --- Set functions --- */
 //
 //// Create a new set
@@ -276,11 +303,11 @@ func (kv *KeyValue) Get(key string) (val string, err error) {
 	err = (*bolt.DB)(kv.db).View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(kv.name)
 		if bucket == nil {
-			return BucketNotFound
+			return ErrBucketNotFound
 		}
 		byteval := bucket.Get([]byte(key))
 		if byteval == nil {
-			return KeyNotFound
+			return ErrKeyNotFound
 		}
 		val = string(byteval)
 		return nil
@@ -293,7 +320,7 @@ func (kv *KeyValue) Del(key string) error {
 	return (*bolt.DB)(kv.db).Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(kv.name)
 		if bucket == nil {
-			return BucketNotFound
+			return ErrBucketNotFound
 		}
 		return bucket.Delete([]byte(key))
 	})
