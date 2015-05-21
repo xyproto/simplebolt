@@ -43,7 +43,7 @@ var (
 
 // Create a new bolt database
 func New(filename string) *Database {
-	db, err := bolt.Open(filename, 0644)
+	db, err := bolt.Open(filename, 0644, nil)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -94,7 +94,7 @@ func (l *List) Add(value string) error {
 		if err != nil {
 			return err
 		}
-		key := strconv.Itoa(n)
+		key := fmt.Sprintf("%v", n)
 		return bucket.Put([]byte(key), []byte(value))
 	})
 }
@@ -210,7 +210,7 @@ func (s *Set) Add(value string) error {
 		if err != nil {
 			return err
 		}
-		key := strconv.Itoa(n)
+		key := fmt.Sprintf("%v", n)
 		return bucket.Put([]byte(key), []byte(value))
 	})
 }
