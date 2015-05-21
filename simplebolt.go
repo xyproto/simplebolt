@@ -37,6 +37,8 @@ var (
 	ErrBucketNotFound = errors.New("Bucket not found!")
 	ErrKeyNotFound    = errors.New("Key not found!")
 	ErrDoesNotExist   = errors.New("Does not exist!")
+	ErrFoundIt= errors.New("Found it")
+	ErrExistsInSet    = errors.New("Element already exists in set")
 )
 
 /* --- Database functions --- */
@@ -199,7 +201,7 @@ func (s *Set) Add(value string) error {
 		return err
 	}
 	if exists {
-		return errors.New("Element already exists in set")
+		return ErrExistsInSet
 	}
 	return (*bolt.DB)(s.db).Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(s.name)
@@ -228,7 +230,7 @@ func (s *Set) Has(value string) (exists bool, err error) {
 		bucket.ForEach(func(byteKey, byteValue []byte) error {
 			if value == string(byteValue) {
 				exists = true
-				return errors.New("Found value") // break
+				return ErrFoundIt// break the ForEach by returning an error
 			}
 			return nil
 		})
@@ -264,10 +266,10 @@ func (s *Set) Del(value string) error {
 			return ErrBucketNotFound
 		}
 		var foundKey []byte
-		return bucket.ForEach(func(byteKey, byteValue []byte) error {
+		bucket.ForEach(func(byteKey, byteValue []byte) error {
 			if value == string(byteValue) {
 				foundKey = byteKey
-				return errors.New("Found value") // break
+				return ErrFoundIt // break the ForEach by returning an error
 			}
 			return nil
 		})
@@ -362,65 +364,97 @@ func (h *HashMap) Get(elementid, key string) (val string, err error) {
 	return
 }
 
-//// Check if a given elementid + key is in the hash map
-//func (h *HashMap) Has(elementid, key string) (bool, error) {
-//	conn := rh.db.Get(rh.dbindex)
-//	retval, err := conn.Do("HEXISTS", rh.id+":"+elementid, key)
-//	if err != nil {
-//		panic(err)
-//	}
-//	return bolt.Bool(retval, err)
-//}
-//
-//// Check if a given elementid exists as a hash map at all
-//func (h *HashMap) Exists(elementid string) (bool, error) {
-//	// TODO: key is not meant to be a wildcard, check for "*"
-//	return hasKey(rh.db, rh.id+":"+elementid, rh.dbindex)
-//}
-//
-//// Get all elementid's for all hash elements
-//func (h *HashMap) GetAll() ([]string, error) {
-//	conn := rh.db.Get(rh.dbindex)
-//	result, err := bolt.Values(conn.Do("KEYS", rh.id+":*"))
-//	strs := make([]string, len(result))
-//	idlen := len(rh.id)
-//	for i := 0; i < len(result); i++ {
-//		strs[i] = getString(result, i)[idlen+1:]
-//	}
-//	return strs, err
-//}
-//
-//// Remove a key for an entry in a hashmap (for instance the email field for a user)
-//func (h *HashMap) DelKey(elementid, key string) error {
-//	conn := rh.db.Get(rh.dbindex)
-//	_, err := conn.Do("HDEL", rh.id+":"+elementid, key)
-//	return err
-//}
-//
-//// Remove an element (for instance a user)
-//func (h *HashMap) Del(elementid string) error {
-//	conn := rh.db.Get(rh.dbindex)
-//	_, err := conn.Do("DEL", rh.id+":"+elementid)
-//	return err
-//}
-//
-//// Remove this hashmap (all keys that starts with this hashmap id and a colon)
-//func (h *HashMap) Remove() error {
-//	conn := rh.db.Get(rh.dbindex)
-//	// Find all hashmap keys that starts with rh.id+":"
-//	results, err := bolt.Values(conn.Do("KEYS", rh.id+":*"))
-//	if err != nil {
-//		return err
-//	}
-//	// For each key id
-//	for i := 0; i < len(results); i++ {
-//		// Delete this key
-//		if _, err = conn.Do("DEL", getString(results, i)); err != nil {
-//			return err
-//		}
-//	}
-//	return nil
-//}
+// Check if a given elementid + key is in the hash map
+func (h *HashMap) Has(elementid, key string) (found bool, err error) {
+	if h.name == nil {
+		return false, ErrDoesNotExist
+	}
+	return found, (*bolt.DB)(h.db).View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(h.name)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		byteval := bucket.Get([]byte(elementid + ":" + key))
+		if byteval != nil {
+			found = true
+		}
+		return nil
+	})
+}
+
+// Check if a given elementid exists as a hash map at all
+func (h *HashMap) Exists(elementid string) (found bool, err error) {
+	if h.name == nil {
+		return false, ErrDoesNotExist
+	}
+	return found, (*bolt.DB)(h.db).View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(h.name)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		bucket.ForEach(func(byteKey, byteValue []byte) error {
+			combinedKey := string(byteKey)
+			if strings.Contains(combinedKey, ":") {
+				fields := strings.SplitN(combinedKey, ":", 2)
+				if fields[0] == elementid {
+					found = true
+					return ErrFoundIt
+				}
+			}
+			// Continue
+			return nil
+		})
+		return nil
+	})
+}
+
+// Remove a key for an entry in a hashmap (for instance the email field for a user)
+func (h *HashMap) DelKey(elementid, key string) error {
+	if h.name == nil {
+		return ErrDoesNotExist
+	}
+	return (*bolt.DB)(h.db).Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(h.name)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		return bucket.Delete([]byte(elementid+":"+key))
+	})
+}
+
+// Remove an element (for instance a user)
+func (h *HashMap) Del(elementid string) error {
+	if h.name == nil {
+		return ErrDoesNotExist
+	}
+	// Remove the keys starting with elementid + ":"
+	return (*bolt.DB)(h.db).View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(h.name)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		return bucket.ForEach(func(byteKey, byteValue []byte) error {
+			combinedKey := string(byteKey)
+			if strings.Contains(combinedKey, ":") {
+				fields := strings.SplitN(combinedKey, ":", 2)
+				if fields[0] == elementid {
+					return bucket.Delete([]byte(combinedKey))
+				}
+			}
+			// Continue
+			return nil
+		})
+	})
+}
+
+// Remove this hashmap
+func (h *HashMap) Remove() error {
+	err := (*bolt.DB)(h.db).Update(func(tx *bolt.Tx) error {
+		return tx.DeleteBucket([]byte(h.name))
+	})
+	h.name = nil
+	return err
+}
 
 /* --- KeyValue functions --- */
 

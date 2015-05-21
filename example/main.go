@@ -94,5 +94,33 @@ func main() {
 
 	h := simplebolt.NewHashMap(db, "counter")
 	h.Set("bob", "password", "hunter1")
+	h.Set("bob", "email", "bob@zombo.com")
 	fmt.Println(h.GetAll())
+
+	ok, err := h.Has("bob", "password")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println("bob ok?", ok)
+
+	ok, err = h.Exists("bob")
+	if err != nil {
+		log.Fatalln(err)
+	}
+	fmt.Println("really?", ok)
+
+	h.Remove()
+
+	ok, err = h.Has("bob", "password")
+	if err == nil {
+		log.Fatalln("not supposed to exist")
+	}
+	fmt.Println("ok")
+
+	ok, err = h.Exists("bob")
+	if err == nil {
+		log.Fatalln("not supposed to exist")
+	}
+	fmt.Println("ok")
+
 }
