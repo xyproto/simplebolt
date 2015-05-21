@@ -2,9 +2,9 @@
 package simplebolt
 
 import (
-	//"strconv"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"github.com/boltdb/bolt"
@@ -12,7 +12,7 @@ import (
 
 // Common for each of the Bolt buckets used here
 type boltBucket struct {
-	db *Database
+	db   *Database
 	name []byte
 }
 
@@ -277,43 +277,56 @@ func (kv *KeyValue) Get(key string) (val string, err error) {
 	return
 }
 
-//// Remove a key
-//func (rkv *KeyValue) Del(key string) error {
-//	conn := rkv.db.Get(rkv.dbindex)
-//	_, err := conn.Do("DEL", rkv.id+":"+key)
-//	return err
-//}
-//
+// Remove a key
+func (kv *KeyValue) Del(key string) error {
+	return (*bolt.DB)(kv.db).Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(kv.name)
+		if bucket == nil {
+			return fmt.Errorf("Bucket %q not found!", kv.name)
+		}
+		return bucket.Delete([]byte(key))
+	})
+}
+
 //// Increase the value of a key, returns the new value
 //// Returns an empty string if there were errors,
 //// or "0" if the key does not already exist.
-//func (rkv *KeyValue) Inc(key string) (string, error) {
-//	conn := rkv.db.Get(rkv.dbindex)
-//	result, err := bolt.Int64(conn.Do("INCR", rkv.id+":"+key))
-//	if err != nil {
-//		return "0", err
-//	}
-//	return strconv.FormatInt(result, 10), nil
-//}
-//
-//// Remove this key/value
-//func (rkv *KeyValue) Remove() error {
-//	conn := rkv.db.Get(rkv.dbindex)
-//	// Find all keys that starts with rkv.id+":"
-//	results, err := bolt.Values(conn.Do("KEYS", rkv.id+":*"))
-//	if err != nil {
-//		return err
-//	}
-//	// For each key id
-//	for i := 0; i < len(results); i++ {
-//		// Delete this key
-//		if _, err = conn.Do("DEL", getString(results, i)); err != nil {
-//			return err
-//		}
-//	}
-//	return nil
-//}
-//
+func (kv *KeyValue) Inc(key string) (val string, err error) {
+	return val, (*bolt.DB)(kv.db).Update(func(tx *bolt.Tx) error {
+		// The numeric value
+		num := 0
+		// Get the string value
+		bucket := tx.Bucket(kv.name)
+		if bucket == nil {
+			// Create the bucket if it does not already exist
+			kv = NewKeyValue(kv.db, string(kv.name))
+			bucket = tx.Bucket(kv.name)
+			if bucket == nil {
+				return fmt.Errorf("Could not create bucket %q!", kv.name)
+			}
+		} else {
+			val := string(bucket.Get([]byte(key)))
+			if converted, err := strconv.Atoi(val); err == nil {
+				// Conversion successful
+				num = converted
+			}
+		}
+		// Num is now either 0 or the previous numeric value
+		num++
+		// Convert the new value to a string and save it
+		val = strconv.Itoa(num)
+		err = bucket.Put([]byte(key), []byte(val))
+		return err
+	})
+}
+
+// Remove this key/value
+func (kv *KeyValue) Remove() error {
+	return (*bolt.DB)(kv.db).Update(func(tx *bolt.Tx) error {
+		return tx.DeleteBucket([]byte(kv.name))
+	})
+}
+
 //// --- Generic bolt functions ---
 //
 //// Check if a key exists. The key can be a wildcard (ie. "user*").

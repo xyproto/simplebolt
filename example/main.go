@@ -24,4 +24,22 @@ func main() {
 	}
 	fmt.Println("Got it:", val)
 
+	kv.Set("banana", "2")
+	kv.Inc("banana")
+	three, err := kv.Get("banana")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	fmt.Println("Three:", three)
+
+	kv.Inc("fnufnu")
+	fnu, err := kv.Get("fnufnu")
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	fmt.Println("fnu", fnu)
+
+	kv.Remove()
 }
