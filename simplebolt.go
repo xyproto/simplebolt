@@ -37,7 +37,7 @@ var (
 	ErrBucketNotFound = errors.New("Bucket not found!")
 	ErrKeyNotFound    = errors.New("Key not found!")
 	ErrDoesNotExist   = errors.New("Does not exist!")
-	ErrFoundIt= errors.New("Found it")
+	ErrFoundIt        = errors.New("Found it")
 	ErrExistsInSet    = errors.New("Element already exists in set")
 )
 
@@ -230,7 +230,7 @@ func (s *Set) Has(value string) (exists bool, err error) {
 		bucket.ForEach(func(byteKey, byteValue []byte) error {
 			if value == string(byteValue) {
 				exists = true
-				return ErrFoundIt// break the ForEach by returning an error
+				return ErrFoundIt // break the ForEach by returning an error
 			}
 			return nil
 		})
@@ -418,7 +418,7 @@ func (h *HashMap) DelKey(elementid, key string) error {
 		if bucket == nil {
 			return ErrBucketNotFound
 		}
-		return bucket.Delete([]byte(elementid+":"+key))
+		return bucket.Delete([]byte(elementid + ":" + key))
 	})
 }
 

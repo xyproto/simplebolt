@@ -104,3 +104,112 @@ func TestTwoFields(t *testing.T) {
 		t.Error("Error in twoFields functions")
 	}
 }
+
+func TestVarious(t *testing.T) {
+	db := New("/tmp/__test_simplebolt4.db")
+	defer db.Close()
+
+	kv := NewKeyValue(db, "fruit")
+	if err := kv.Set("banana", "yes"); err != nil {
+		t.Error("Could not set a key+value:", err)
+	}
+
+	val, err := kv.Get("banana")
+	if err != nil {
+		t.Error("Could not get value:", err)
+	}
+
+	kv.Set("banana", "2")
+	kv.Inc("banana")
+	_, err = kv.Get("banana")
+	if err != nil {
+		t.Error(err)
+	}
+
+	kv.Inc("fnu")
+	_, err = kv.Get("fnu")
+	if err != nil {
+		t.Error(err)
+	}
+
+	val, err = kv.Get("doesnotexist")
+	//fmt.Println("does not exist", val, err)
+
+	kv.Remove()
+
+	l := NewList(db, "fruit")
+
+	l.Add("kiwi")
+	l.Add("banana")
+	l.Add("pear")
+	l.Add("apple")
+
+	if _, err := l.GetAll(); err != nil {
+		t.Error(err)
+	}
+
+	last, err := l.GetLast()
+	if err != nil {
+		t.Error(err)
+	}
+	if last != "apple" {
+		t.Error("last one should be apple")
+	}
+
+	lastN, err := l.GetLastN(3)
+	if err != nil {
+		t.Error(err)
+	}
+	if lastN[0] != "banana" {
+		t.Error("banana is wrong")
+	}
+
+	l.Remove()
+
+	s := NewSet(db, "numbers")
+	s.Add("9")
+	s.Add("7")
+	s.Add("2")
+	s.Add("2")
+	s.Add("2")
+	s.Add("7")
+	s.Add("8")
+	_, err = s.GetAll()
+	if err != nil {
+		t.Error(err)
+	}
+	s.Remove()
+
+	val, err = kv.Inc("counter")
+	if (val != "1") || (err != nil) {
+		t.Error("counter should be 1 but is", val)
+	}
+	kv.Remove()
+
+	h := NewHashMap(db, "counter")
+	h.Set("bob", "password", "hunter1")
+	h.Set("bob", "email", "bob@zombo.com")
+	h.GetAll()
+
+	_, err = h.Has("bob", "password")
+	if err != nil {
+		t.Error(err)
+	}
+
+	_, err = h.Exists("bob")
+	if err != nil {
+		t.Error(err)
+	}
+
+	h.Remove()
+
+	_, err = h.Has("bob", "password")
+	if err == nil {
+		t.Error("not supposed to exist")
+	}
+
+	_, err = h.Exists("bob")
+	if err == nil {
+		t.Error("not supposed to exist")
+	}
+}
