@@ -9,7 +9,9 @@ func TestList(t *testing.T) {
 		listname = "abc123_test_test_test_123abc"
 		testdata = "123abc"
 	)
-	list := NewList(pool, listname)
+	db := New("/tmp/__test_simplebolt1.db")
+	defer db.Close()
+	list := NewList(db, listname)
 	if err := list.Add(testdata); err != nil {
 		t.Errorf("Error, could not add item to list! %s", err.Error())
 	}
@@ -32,7 +34,9 @@ func TestRemove(t *testing.T) {
 		testkey   = "sdsdf234234"
 		testvalue = "asdfasdf1234"
 	)
-	kv := NewKeyValue(pool, kvname)
+	db := New("/tmp/__test_simplebolt2.db")
+	defer db.Close()
+	kv := NewKeyValue(db, kvname)
 	if err := kv.Set(testkey, testvalue); err != nil {
 		t.Errorf("Error, could not set key and value! %s", err.Error())
 	}
@@ -55,7 +59,9 @@ func TestInc(t *testing.T) {
 		testvalue1 = "10"
 		testvalue2 = "1"
 	)
-	kv := NewKeyValue(pool, kvname)
+	db := New("/tmp/__test_simplebolt3.db")
+	defer db.Close()
+	kv := NewKeyValue(db, kvname)
 	if err := kv.Set(testkey, testvalue0); err != nil {
 		t.Errorf("Error, could not set key and value! %s", err.Error())
 	}

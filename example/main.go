@@ -71,4 +71,22 @@ func main() {
 	fmt.Println("The last 3 are:", lastN)
 
 	l.Remove()
+
+	s := simplebolt.NewSet(db, "numbers")
+	s.Add("9")
+	s.Add("7")
+	s.Add("2")
+	s.Add("2")
+	s.Add("2")
+	s.Add("7")
+	s.Add("8")
+	v, err := s.GetAll()
+	if err == nil {
+		fmt.Println(v)
+	}
+	s.Remove()
+
+	val, err = kv.Inc("counter")
+	fmt.Println("INC VAL =", val)
+	fmt.Println("INC ERR =", err)
 }
