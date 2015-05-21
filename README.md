@@ -1,11 +1,11 @@
-Simple Redis
+Simple Bolt
 ============
 
 [![Build Status](https://travis-ci.org/xyproto/simpleredis.svg?branch=master)](https://travis-ci.org/xyproto/simpleredis)
 [![GoDoc](https://godoc.org/github.com/xyproto/simpleredis?status.svg)](http://godoc.org/github.com/xyproto/simpleredis)
 
 
-Easy way to use Redis from Go.
+Easy way to use Bolt from Go.
 
 
 Online API Documentation
@@ -37,7 +37,7 @@ import (
 func main() {
 	// Check if the redis service is up
 	if err := simpleredis.TestConnection(); err != nil {
-		log.Fatalln("Could not connect to Redis. Is the service up and running?")
+		log.Fatalln("Could not connect to Bolt. Is the service up and running?")
 	}
 
 	// Use instead for testing if a different host/port is up.
@@ -80,7 +80,7 @@ func main() {
 Testing
 -------
 
-Redis must be up and running locally for the `go test` tests to work.
+Bolt must be up and running locally for the `go test` tests to work.
 
 
 Version, license and author
