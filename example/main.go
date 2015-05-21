@@ -87,6 +87,12 @@ func main() {
 	s.Remove()
 
 	val, err = kv.Inc("counter")
-	fmt.Println("INC VAL =", val)
-	fmt.Println("INC ERR =", err)
+	if (val != "1") || (err != nil) {
+		log.Println("counter should be 1 but is", val)
+	}
+	kv.Remove()
+
+	h := simplebolt.NewHashMap(db, "counter")
+	h.Set("bob", "password", "hunter1")
+	fmt.Println(h.GetAll())
 }

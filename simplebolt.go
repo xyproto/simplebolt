@@ -1,4 +1,4 @@
-// Simplebolt provides a way to use Bolt that is similar to simpleredis
+// Simplebolt provides a simple way to use Bolt. Similar to simpleredis.
 package simplebolt
 
 import (
@@ -11,24 +11,26 @@ import (
 	"github.com/boltdb/bolt"
 )
 
-// Common for each of the Bolt buckets used here
-type boltBucket struct {
-	db   *Database
-	name []byte
-}
+const (
+	// Version number. Stable API within major version numbers.
+	Version = 1.0
+)
 
 type (
+	// A Bolt database
 	Database bolt.DB
 
+	// Used for each of the datatypes
+	boltBucket struct {
+		db   *Database // the Bolt database
+		name []byte    // the bucket name
+	}
+
+	// The wrapped datatypes
 	List     boltBucket
 	Set      boltBucket
 	HashMap  boltBucket
 	KeyValue boltBucket
-)
-
-const (
-	// Version number. Stable API within major version numbers.
-	Version = 1.0
 )
 
 var (
@@ -282,30 +284,84 @@ func (s *Set) Remove() error {
 	return err
 }
 
-///* --- HashMap functions --- */
-//
-//// Create a new hashmap
-//func NewHashMap(db *Database, id string) *HashMap {
-//	return &HashMap{db, id, 0}
-//}
-//
-//// Set a value in a hashmap given the element id (for instance a user id) and the key (for instance "password")
-//func (rh *HashMap) Set(elementid, key, value string) error {
-//	conn := rh.db.Get(rh.dbindex)
-//	_, err := conn.Do("HSET", rh.id+":"+elementid, key, value)
-//	return err
-//}
-//
-//// Get a value from a hashmap given the element id (for instance a user id) and the key (for instance "password")
-//func (rh *HashMap) Get(elementid, key string) (string, error) {
-//	conn := rh.db.Get(rh.dbindex)
-//	result, err := bolt.String(conn.Do("HGET", rh.id+":"+elementid, key))
-//	if err != nil {
-//		return "", err
-//	}
-//	return result, nil
-//}
-//
+/* --- HashMap functions --- */
+
+// Create a new HashMap
+func NewHashMap(db *Database, id string) *HashMap {
+	name := []byte(id)
+	(*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
+		if _, err := tx.CreateBucketIfNotExists(name); err != nil {
+			return fmt.Errorf("Could not create bucket: %s", err)
+		}
+		return nil
+	})
+	return &HashMap{db, name}
+}
+
+// Set a value in a hashmap given the element id (for instance a user id) and the key (for instance "password")
+func (h *HashMap) Set(elementid, key, value string) (err error) {
+	if h.name == nil {
+		return ErrDoesNotExist
+	}
+	return (*bolt.DB)(h.db).Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(h.name)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		// Store the key and value
+		return bucket.Put([]byte(elementid+":"+key), []byte(value))
+	})
+}
+
+// Get all elementid's for all hash elements
+func (h *HashMap) GetAll() (results []string, err error) {
+	if h.name == nil {
+		return nil, ErrDoesNotExist
+	}
+	return results, (*bolt.DB)(h.db).View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(h.name)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		return bucket.ForEach(func(byteKey, byteValue []byte) error {
+			combinedKey := string(byteKey)
+			if strings.Contains(combinedKey, ":") {
+				fields := strings.SplitN(combinedKey, ":", 2)
+				for _, result := range results {
+					if result == fields[0] {
+						// Result already exists, continue
+						return nil
+					}
+				}
+				// Store the new result
+				results = append(results, string(fields[0]))
+			}
+			// Continue
+			return nil
+		})
+	})
+}
+
+// Get a value from a hashmap given the element id (for instance a user id) and the key (for instance "password")
+func (h *HashMap) Get(elementid, key string) (val string, err error) {
+	if h.name == nil {
+		return "", ErrDoesNotExist
+	}
+	err = (*bolt.DB)(h.db).View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(h.name)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		byteval := bucket.Get([]byte(elementid + ":" + key))
+		if byteval == nil {
+			return ErrKeyNotFound
+		}
+		val = string(byteval)
+		return nil
+	})
+	return
+}
+
 //// Check if a given elementid + key is in the hash map
 //func (rh *HashMap) Has(elementid, key string) (bool, error) {
 //	conn := rh.db.Get(rh.dbindex)

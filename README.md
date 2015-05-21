@@ -6,7 +6,7 @@ WORK IN PROGRESS!
 [![Build Status](https://travis-ci.org/xyproto/simplebolt.svg?branch=master)](https://travis-ci.org/xyproto/simplebolt)
 [![GoDoc](https://godoc.org/github.com/xyproto/simplebolt?status.svg)](http://godoc.org/github.com/xyproto/simplebolt)
 
-A way to use Bolt that is similar to [simpleredis](https://github.com/xyproto/simpleredis).
+Simple way to use Bolt. Similar to [simpleredis](https://github.com/xyproto/simpleredis).
 
 
 Online API Documentation
