@@ -182,6 +182,14 @@ func TestVarious(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
+	s.Clear()
+	v, err := s.GetAll()
+	if err != nil {
+		t.Error(err)
+	}
+	if len(v) != 0 {
+		t.Error("Could not clear set")
+	}
 	s.Remove()
 
 	// Check that the set qualifies for the ISet interface
@@ -234,10 +242,4 @@ func TestInterface(t *testing.T) {
 
 	// Check that the database qualifies for the IHost interface
 	var _ pinterface.IHost = db
-}
-
-func TestIUserState(t *testing.T) {
-	//userstate := NewUserStateSimple() // for localhost
-	userstate := NewUserState(connectionString, true)
-
 }

@@ -182,6 +182,21 @@ func (l *List) Remove() error {
 	return err
 }
 
+func (l *List) Clear() error {
+	if l.name == nil {
+		return ErrDoesNotExist
+	}
+	return (*bolt.DB)(l.db).View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(l.name)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		return bucket.ForEach(func(key, _ []byte) error {
+			return bucket.Delete(key)
+		})
+	})
+}
+
 /* --- Set functions --- */
 
 // Create a new key/value if it does not already exist
@@ -243,18 +258,18 @@ func (s *Set) Has(value string) (exists bool, err error) {
 	})
 }
 
-// Get all elements of the set
-func (s *Set) GetAll() (results []string, err error) {
+// Get all values of the set
+func (s *Set) GetAll() (values []string, err error) {
 	if s.name == nil {
 		return nil, ErrDoesNotExist
 	}
-	return results, (*bolt.DB)(s.db).View(func(tx *bolt.Tx) error {
+	return values, (*bolt.DB)(s.db).View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(s.name)
 		if bucket == nil {
 			return ErrBucketNotFound
 		}
 		return bucket.ForEach(func(key, value []byte) error {
-			results = append(results, string(value))
+			values = append(values, string(value))
 			return nil
 		})
 	})
@@ -291,7 +306,25 @@ func (s *Set) Remove() error {
 	return err
 }
 
+// Remove all elements from this set
+func (s *Set) Clear() error {
+	if s.name == nil {
+		return ErrDoesNotExist
+	}
+	return (*bolt.DB)(s.db).Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(s.name)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		return bucket.ForEach(func(key, _ []byte) error {
+			return bucket.Delete(key)
+		})
+	})
+}
+
 /* --- HashMap functions --- */
+
+// TODO: See https://github.com/boltdb/bolt/blob/master/bucket.go#L207 for recursive use of buckets
 
 // Create a new HashMap
 func NewHashMap(db *Database, id string) *HashMap {
@@ -461,6 +494,22 @@ func (h *HashMap) Remove() error {
 	return err
 }
 
+// Remove all elements from this hash map
+func (h *HashMap) Clear() error {
+	if h.name == nil {
+		return ErrDoesNotExist
+	}
+	return (*bolt.DB)(h.db).Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(h.name)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		return bucket.ForEach(func(key, _ []byte) error {
+			return bucket.Delete(key)
+		})
+	})
+}
+
 /* --- KeyValue functions --- */
 
 // Create a new key/value if it does not already exist
@@ -565,4 +614,20 @@ func (kv *KeyValue) Remove() error {
 	})
 	kv.name = nil
 	return err
+}
+
+// Remove all elements from this key/value
+func (k *KeyValue) Clear() error {
+	if k.name == nil {
+		return ErrDoesNotExist
+	}
+	return (*bolt.DB)(k.db).Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(k.name)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		return bucket.ForEach(func(key, _ []byte) error {
+			return bucket.Delete(key)
+		})
+	})
 }
