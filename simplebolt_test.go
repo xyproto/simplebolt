@@ -167,6 +167,9 @@ func TestVarious(t *testing.T) {
 
 	l.Remove()
 
+	// Check that the list qualifies for the IList interface
+	var _ pinterface.IList = l
+
 	s := NewSet(db, "numbers")
 	s.Add("9")
 	s.Add("7")
@@ -181,11 +184,17 @@ func TestVarious(t *testing.T) {
 	}
 	s.Remove()
 
+	// Check that the set qualifies for the ISet interface
+	var _ pinterface.ISet = s
+
 	val, err = kv.Inc("counter")
 	if (val != "1") || (err != nil) {
 		t.Error("counter should be 1 but is", val)
 	}
 	kv.Remove()
+
+	// Check that the key value qualifies for the IKeyValue interface
+	var _ pinterface.IKeyValue = kv
 
 	h := NewHashMap(db, "counter")
 	h.Set("bob", "password", "hunter1")
@@ -213,6 +222,9 @@ func TestVarious(t *testing.T) {
 	if err == nil {
 		t.Error("not supposed to exist")
 	}
+
+	// Check that the hash map qualifies for the IHashMap interface
+	var _ pinterface.IHashMap = h
 }
 
 func TestInterface(t *testing.T) {
@@ -222,4 +234,10 @@ func TestInterface(t *testing.T) {
 
 	// Check that the database qualifies for the IHost interface
 	var _ pinterface.IHost = db
+}
+
+func TestIUserState(t *testing.T) {
+	//userstate := NewUserStateSimple() // for localhost
+	userstate := NewUserState(connectionString, true)
+
 }
