@@ -1,7 +1,7 @@
 package simplebolt
 
 import (
-	sqldb "github.com/xyproto/db"
+	"github.com/xyproto/pinterface"
 	"testing"
 )
 
@@ -221,5 +221,5 @@ func TestInterface(t *testing.T) {
 	defer db.Close()
 
 	// Check that the database qualifies for the IHost interface
-	var _ sqldb.IHost = db
+	var _ pinterface.IHost = db
 }
