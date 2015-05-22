@@ -57,6 +57,11 @@ func (db *Database) Close() {
 	(*bolt.DB)(db).Close()
 }
 
+// Ping the database (only for fulfulling the db.IHost interface)
+func (db *Database) Ping() error {
+	return nil
+}
+
 // Split a string into two parts, given a delimiter.
 // Returns the two parts and true if it works out.
 func twoFields(s, delim string) (string, string, bool) {

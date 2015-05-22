@@ -1,6 +1,7 @@
 package simplebolt
 
 import (
+	sqldb "github.com/xyproto/db"
 	"testing"
 )
 
@@ -212,4 +213,13 @@ func TestVarious(t *testing.T) {
 	if err == nil {
 		t.Error("not supposed to exist")
 	}
+}
+
+func TestInterface(t *testing.T) {
+
+	db := New("/tmp/__test_simplebolt5.db")
+	defer db.Close()
+
+	// Check that the database qualifies for the IHost interface
+	var _ sqldb.IHost = db
 }
