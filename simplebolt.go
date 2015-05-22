@@ -57,7 +57,7 @@ func (db *Database) Close() {
 	(*bolt.DB)(db).Close()
 }
 
-// Ping the database (only for fulfulling the db.IHost interface)
+// Ping the database (only for fulfulling the pinterface.IHost interface)
 func (db *Database) Ping() error {
 	return nil
 }
