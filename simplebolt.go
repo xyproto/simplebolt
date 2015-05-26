@@ -13,7 +13,7 @@ import (
 
 const (
 	// Version number. Stable API within major version numbers.
-	Version = 1.0
+	Version = 2.0
 )
 
 type (
@@ -34,9 +34,9 @@ type (
 )
 
 var (
-	ErrBucketNotFound = errors.New("Bucket not found!")
-	ErrKeyNotFound    = errors.New("Key not found!")
-	ErrDoesNotExist   = errors.New("Does not exist!")
+	ErrBucketNotFound = errors.New("Bucket not found")
+	ErrKeyNotFound    = errors.New("Key not found")
+	ErrDoesNotExist   = errors.New("Does not exist")
 	ErrFoundIt        = errors.New("Found it")
 	ErrExistsInSet    = errors.New("Element already exists in set")
 )
@@ -57,7 +57,7 @@ func (db *Database) Close() {
 	(*bolt.DB)(db).Close()
 }
 
-// Ping the database (only for fulfulling the pinterface.IHost interface)
+// Ping the database (only for fulfilling the pinterface.IHost interface)
 func (db *Database) Ping() error {
 	return nil
 }
@@ -75,16 +75,18 @@ func twoFields(s, delim string) (string, string, bool) {
 /* --- List functions --- */
 
 // Create a new list
-func NewList(db *Database, id string) *List {
+func NewList(db *Database, id string) (*List, error) {
 	name := []byte(id)
-	(*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
+	if err := (*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists(name); err != nil {
 			return fmt.Errorf("Could not create bucket: %s", err)
 		}
 		return nil
-	})
-	return &List{db, name}
-
+	}); err != nil {
+		return nil, err
+	}
+	// Success
+	return &List{db, name}, nil
 }
 
 // Add an element to the list
@@ -178,10 +180,12 @@ func (l *List) Remove() error {
 	err := (*bolt.DB)(l.db).Update(func(tx *bolt.Tx) error {
 		return tx.DeleteBucket([]byte(l.name))
 	})
+	// Mark as removed by setting the name to nil
 	l.name = nil
 	return err
 }
 
+// Remove all elements from this list
 func (l *List) Clear() error {
 	if l.name == nil {
 		return ErrDoesNotExist
@@ -200,15 +204,18 @@ func (l *List) Clear() error {
 /* --- Set functions --- */
 
 // Create a new key/value if it does not already exist
-func NewSet(db *Database, id string) *Set {
+func NewSet(db *Database, id string) (*Set, error) {
 	name := []byte(id)
-	(*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
+	if err := (*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists(name); err != nil {
 			return fmt.Errorf("Could not create bucket: %s", err)
 		}
 		return nil
-	})
-	return &Set{db, name}
+	}); err != nil {
+		return nil, err
+	}
+	// Success
+	return &Set{db, name}, nil
 }
 
 // Add an element to the set
@@ -302,6 +309,7 @@ func (s *Set) Remove() error {
 	err := (*bolt.DB)(s.db).Update(func(tx *bolt.Tx) error {
 		return tx.DeleteBucket([]byte(s.name))
 	})
+	// Mark as removed by setting the name to nil
 	s.name = nil
 	return err
 }
@@ -327,15 +335,18 @@ func (s *Set) Clear() error {
 // TODO: See https://github.com/boltdb/bolt/blob/master/bucket.go#L207 for recursive use of buckets
 
 // Create a new HashMap
-func NewHashMap(db *Database, id string) *HashMap {
+func NewHashMap(db *Database, id string) (*HashMap, error) {
 	name := []byte(id)
-	(*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
+	if err := (*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists(name); err != nil {
 			return fmt.Errorf("Could not create bucket: %s", err)
 		}
 		return nil
-	})
-	return &HashMap{db, name}
+	}); err != nil {
+		return nil, err
+	}
+	// Success
+	return &HashMap{db, name}, nil
 }
 
 // Set a value in a hashmap given the element id (for instance a user id) and the key (for instance "password")
@@ -490,6 +501,7 @@ func (h *HashMap) Remove() error {
 	err := (*bolt.DB)(h.db).Update(func(tx *bolt.Tx) error {
 		return tx.DeleteBucket([]byte(h.name))
 	})
+	// Mark as removed by setting the name to nil
 	h.name = nil
 	return err
 }
@@ -513,15 +525,17 @@ func (h *HashMap) Clear() error {
 /* --- KeyValue functions --- */
 
 // Create a new key/value if it does not already exist
-func NewKeyValue(db *Database, id string) *KeyValue {
+func NewKeyValue(db *Database, id string) (*KeyValue, error) {
 	name := []byte(id)
-	(*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
+	if err := (*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists(name); err != nil {
 			return fmt.Errorf("Could not create bucket: %s", err)
 		}
 		return nil
-	})
-	return &KeyValue{db, name}
+	}); err != nil {
+		return nil, err
+	}
+	return &KeyValue{db, name}, nil
 }
 
 // Set a key and value
@@ -612,6 +626,7 @@ func (kv *KeyValue) Remove() error {
 	err := (*bolt.DB)(kv.db).Update(func(tx *bolt.Tx) error {
 		return tx.DeleteBucket([]byte(kv.name))
 	})
+	// Mark as removed by setting the name to nil
 	kv.name = nil
 	return err
 }

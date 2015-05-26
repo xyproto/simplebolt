@@ -2,6 +2,8 @@ package simplebolt
 
 import (
 	"github.com/xyproto/pinterface"
+	"os"
+	"path"
 	"testing"
 )
 
@@ -10,9 +12,12 @@ func TestList(t *testing.T) {
 		listname = "abc123_test_test_test_123abc"
 		testdata = "123abc"
 	)
-	db := New("/tmp/__test_simplebolt1.db")
+	db := New(path.Join(os.TempDir(), "bolt.db"))
 	defer db.Close()
-	list := NewList(db, listname)
+	list, err := NewList(db, listname)
+	if err != nil {
+		t.Error(err)
+	}
 	if err := list.Add(testdata); err != nil {
 		t.Errorf("Error, could not add item to list! %s", err.Error())
 	}
@@ -35,9 +40,12 @@ func TestRemove(t *testing.T) {
 		testkey   = "sdsdf234234"
 		testvalue = "asdfasdf1234"
 	)
-	db := New("/tmp/__test_simplebolt2.db")
+	db := New(path.Join(os.TempDir(), "bolt.db"))
 	defer db.Close()
-	kv := NewKeyValue(db, kvname)
+	kv, err := NewKeyValue(db, kvname)
+	if err != nil {
+		t.Error(err)
+	}
 	if err := kv.Set(testkey, testvalue); err != nil {
 		t.Errorf("Error, could not set key and value! %s", err.Error())
 	}
@@ -60,9 +68,12 @@ func TestInc(t *testing.T) {
 		testvalue1 = "10"
 		testvalue2 = "1"
 	)
-	db := New("/tmp/__test_simplebolt3.db")
+	db := New(path.Join(os.TempDir(), "bolt.db"))
 	defer db.Close()
-	kv := NewKeyValue(db, kvname)
+	kv, err := NewKeyValue(db, kvname)
+	if err != nil {
+		t.Error(err)
+	}
 	if err := kv.Set(testkey, testvalue0); err != nil {
 		t.Errorf("Error, could not set key and value! %s", err.Error())
 	}
@@ -107,10 +118,13 @@ func TestTwoFields(t *testing.T) {
 }
 
 func TestVarious(t *testing.T) {
-	db := New("/tmp/__test_simplebolt4.db")
+	db := New(path.Join(os.TempDir(), "bolt.db"))
 	defer db.Close()
 
-	kv := NewKeyValue(db, "fruit")
+	kv, err := NewKeyValue(db, "fruit")
+	if err != nil {
+		t.Error(err)
+	}
 	if err := kv.Set("banana", "yes"); err != nil {
 		t.Error("Could not set a key+value:", err)
 	}
@@ -138,7 +152,10 @@ func TestVarious(t *testing.T) {
 
 	kv.Remove()
 
-	l := NewList(db, "fruit")
+	l, err := NewList(db, "fruit")
+	if err != nil {
+		t.Error(err)
+	}
 
 	l.Add("kiwi")
 	l.Add("banana")
@@ -170,7 +187,11 @@ func TestVarious(t *testing.T) {
 	// Check that the list qualifies for the IList interface
 	var _ pinterface.IList = l
 
-	s := NewSet(db, "numbers")
+	s, err := NewSet(db, "numbers")
+	if err != nil {
+		t.Error(err)
+	}
+
 	s.Add("9")
 	s.Add("7")
 	s.Add("2")
@@ -204,7 +225,11 @@ func TestVarious(t *testing.T) {
 	// Check that the key value qualifies for the IKeyValue interface
 	var _ pinterface.IKeyValue = kv
 
-	h := NewHashMap(db, "counter")
+	h, err := NewHashMap(db, "counter")
+	if err != nil {
+		t.Error(err)
+	}
+
 	h.Set("bob", "password", "hunter1")
 	h.Set("bob", "email", "bob@zombo.com")
 	h.GetAll()
@@ -237,7 +262,7 @@ func TestVarious(t *testing.T) {
 
 func TestInterface(t *testing.T) {
 
-	db := New("/tmp/__test_simplebolt5.db")
+	db := New(path.Join(os.TempDir(), "bolt.db"))
 	defer db.Close()
 
 	// Check that the database qualifies for the IHost interface
