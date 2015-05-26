@@ -62,7 +62,7 @@ func main() {
 Version, license and author
 ---------------------------
 
-* Version: 1.0
+* Version: 2.0
 * License: MIT
 * Author: Alexander F Rødseth
 
