@@ -2,8 +2,8 @@
 package simplebolt
 
 import (
+	"encoding/binary"
 	"errors"
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -59,17 +59,8 @@ func (db *Database) Close() {
 
 // Ping the database (only for fulfilling the pinterface.IHost interface)
 func (db *Database) Ping() error {
+	// Always O.K.
 	return nil
-}
-
-// Split a string into two parts, given a delimiter.
-// Returns the two parts and true if it works out.
-func twoFields(s, delim string) (string, string, bool) {
-	if strings.Count(s, delim) != 1 {
-		return s, "", false
-	}
-	fields := strings.Split(s, delim)
-	return fields[0], fields[1], true
 }
 
 /* --- List functions --- */
@@ -79,9 +70,9 @@ func NewList(db *Database, id string) (*List, error) {
 	name := []byte(id)
 	if err := (*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists(name); err != nil {
-			return fmt.Errorf("Could not create bucket: %s", err)
+			return errors.New("Could not create bucket: " + err.Error())
 		}
-		return nil
+		return nil // Return from Update function
 	}); err != nil {
 		return nil, err
 	}
@@ -103,8 +94,7 @@ func (l *List) Add(value string) error {
 		if err != nil {
 			return err
 		}
-		key := fmt.Sprintf("%v", n)
-		return bucket.Put([]byte(key), []byte(value))
+		return bucket.Put(byteID(n), []byte(value))
 	})
 }
 
@@ -118,9 +108,9 @@ func (l *List) GetAll() (results []string, err error) {
 		if bucket == nil {
 			return ErrBucketNotFound
 		}
-		return bucket.ForEach(func(key, value []byte) error {
+		return bucket.ForEach(func(_, value []byte) error {
 			results = append(results, string(value))
-			return nil
+			return nil // Continue ForEach
 		})
 	})
 }
@@ -136,10 +126,10 @@ func (l *List) GetLast() (result string, err error) {
 			return ErrBucketNotFound
 		}
 		cursor := bucket.Cursor()
-		// Ignoring the key
+		// Ignore the key
 		_, value := cursor.Last()
 		result = string(value)
-		return nil
+		return nil // Return from View function
 	})
 }
 
@@ -154,9 +144,9 @@ func (l *List) GetLastN(n int) (results []string, err error) {
 			return ErrBucketNotFound
 		}
 		var size int64 = 0
-		bucket.ForEach(func(key, value []byte) error {
+		bucket.ForEach(func(_, _ []byte) error {
 			size++
-			return nil
+			return nil // Continue ForEach
 		})
 		if size < int64(n) {
 			return errors.New("Too few items in list")
@@ -164,14 +154,14 @@ func (l *List) GetLastN(n int) (results []string, err error) {
 		// Ok, fetch the n last items. startPos is counting from 0.
 		var startPos int64 = size - int64(n)
 		var i int64 = 0
-		bucket.ForEach(func(key, value []byte) error {
+		bucket.ForEach(func(_, value []byte) error {
 			if i >= startPos {
 				results = append(results, string(value))
 			}
 			i++
-			return nil
+			return nil // Continue ForEach
 		})
-		return nil
+		return nil // Return from View function
 	})
 }
 
@@ -208,9 +198,9 @@ func NewSet(db *Database, id string) (*Set, error) {
 	name := []byte(id)
 	if err := (*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists(name); err != nil {
-			return fmt.Errorf("Could not create bucket: %s", err)
+			return errors.New("Could not create bucket: " + err.Error())
 		}
-		return nil
+		return nil // Return from Update function
 	}); err != nil {
 		return nil, err
 	}
@@ -239,8 +229,7 @@ func (s *Set) Add(value string) error {
 		if err != nil {
 			return err
 		}
-		key := fmt.Sprintf("%v", n)
-		return bucket.Put([]byte(key), []byte(value))
+		return bucket.Put(byteID(n), []byte(value))
 	})
 }
 
@@ -254,14 +243,14 @@ func (s *Set) Has(value string) (exists bool, err error) {
 		if bucket == nil {
 			return ErrBucketNotFound
 		}
-		bucket.ForEach(func(byteKey, byteValue []byte) error {
+		bucket.ForEach(func(_, byteValue []byte) error {
 			if value == string(byteValue) {
 				exists = true
 				return ErrFoundIt // break the ForEach by returning an error
 			}
-			return nil
+			return nil // Continue ForEach
 		})
-		return nil
+		return nil // Return from View function
 	})
 }
 
@@ -275,9 +264,9 @@ func (s *Set) GetAll() (values []string, err error) {
 		if bucket == nil {
 			return ErrBucketNotFound
 		}
-		return bucket.ForEach(func(key, value []byte) error {
+		return bucket.ForEach(func(_, value []byte) error {
 			values = append(values, string(value))
-			return nil
+			return nil // Return from ForEach function
 		})
 	})
 }
@@ -298,7 +287,7 @@ func (s *Set) Del(value string) error {
 				foundKey = byteKey
 				return ErrFoundIt // break the ForEach by returning an error
 			}
-			return nil
+			return nil // Continue ForEach
 		})
 		return bucket.Delete([]byte(foundKey))
 	})
@@ -332,16 +321,14 @@ func (s *Set) Clear() error {
 
 /* --- HashMap functions --- */
 
-// TODO: See https://github.com/boltdb/bolt/blob/master/bucket.go#L207 for recursive use of buckets
-
 // Create a new HashMap
 func NewHashMap(db *Database, id string) (*HashMap, error) {
 	name := []byte(id)
 	if err := (*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists(name); err != nil {
-			return fmt.Errorf("Could not create bucket: %s", err)
+			return errors.New("Could not create bucket: " + err.Error())
 		}
-		return nil
+		return nil // Return from Update function
 	}); err != nil {
 		return nil, err
 	}
@@ -374,21 +361,20 @@ func (h *HashMap) GetAll() (results []string, err error) {
 		if bucket == nil {
 			return ErrBucketNotFound
 		}
-		return bucket.ForEach(func(byteKey, byteValue []byte) error {
+		return bucket.ForEach(func(byteKey, _ []byte) error {
 			combinedKey := string(byteKey)
 			if strings.Contains(combinedKey, ":") {
 				fields := strings.SplitN(combinedKey, ":", 2)
 				for _, result := range results {
 					if result == fields[0] {
 						// Result already exists, continue
-						return nil
+						return nil // Continue ForEach
 					}
 				}
 				// Store the new result
 				results = append(results, string(fields[0]))
 			}
-			// Continue
-			return nil
+			return nil // Continue ForEach
 		})
 	})
 }
@@ -408,7 +394,7 @@ func (h *HashMap) Get(elementid, key string) (val string, err error) {
 			return ErrKeyNotFound
 		}
 		val = string(byteval)
-		return nil
+		return nil // Return from View function
 	})
 	return
 }
@@ -427,7 +413,7 @@ func (h *HashMap) Has(elementid, key string) (found bool, err error) {
 		if byteval != nil {
 			found = true
 		}
-		return nil
+		return nil // Return from View function
 	})
 }
 
@@ -450,10 +436,9 @@ func (h *HashMap) Exists(elementid string) (found bool, err error) {
 					return ErrFoundIt
 				}
 			}
-			// Continue
-			return nil
+			return nil // Continue ForEach
 		})
-		return nil
+		return nil // Return from View function
 	})
 }
 
@@ -490,8 +475,7 @@ func (h *HashMap) Del(elementid string) error {
 					return bucket.Delete([]byte(combinedKey))
 				}
 			}
-			// Continue
-			return nil
+			return nil // Continue ForEach
 		})
 	})
 }
@@ -529,9 +513,9 @@ func NewKeyValue(db *Database, id string) (*KeyValue, error) {
 	name := []byte(id)
 	if err := (*bolt.DB)(db).Update(func(tx *bolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists(name); err != nil {
-			return fmt.Errorf("Could not create bucket: %s", err)
+			return errors.New("Could not create bucket: " + err.Error())
 		}
-		return nil
+		return nil // Return from Update function
 	}); err != nil {
 		return nil, err
 	}
@@ -568,7 +552,7 @@ func (kv *KeyValue) Get(key string) (val string, err error) {
 			return ErrKeyNotFound
 		}
 		val = string(byteval)
-		return nil
+		return nil // Return from View function
 	})
 	return
 }
@@ -587,9 +571,9 @@ func (kv *KeyValue) Del(key string) error {
 	})
 }
 
-//// Increase the value of a key, returns the new value
-//// Returns an empty string if there were errors,
-//// or "0" if the key does not already exist.
+// Increase the value of a key, returns the new value
+// Returns an empty string if there were errors,
+// or "0" if the key does not already exist.
 func (kv *KeyValue) Inc(key string) (val string, err error) {
 	if kv.name == nil {
 		kv.name = []byte(key)
@@ -603,7 +587,7 @@ func (kv *KeyValue) Inc(key string) (val string, err error) {
 			// Create the bucket if it does not already exist
 			bucket, err = tx.CreateBucketIfNotExists(kv.name)
 			if err != nil {
-				return fmt.Errorf("Could not create bucket: %s", err)
+				return errors.New("Could not create bucket: " + err.Error())
 			}
 		} else {
 			val := string(bucket.Get([]byte(key)))
@@ -645,4 +629,13 @@ func (k *KeyValue) Clear() error {
 			return bucket.Delete(key)
 		})
 	})
+}
+
+/* --- Utility functions --- */
+
+// Create a byte slice from an uint64
+func byteID(x uint64) []byte {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, x)
+	return b
 }
