@@ -12,7 +12,10 @@ func main() {
 	defer db.Close()
 
 	// Create a list named "greetings"
-	list := simplebolt.NewList(db, "greetings")
+	list, err := simplebolt.NewList(db, "greetings")
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	// Add "hello" to the list, check if there are errors
 	if list.Add("hello") != nil {
