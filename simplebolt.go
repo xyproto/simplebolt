@@ -39,6 +39,7 @@ var (
 	ErrDoesNotExist   = errors.New("Does not exist")
 	ErrFoundIt        = errors.New("Found it")
 	ErrExistsInSet    = errors.New("Element already exists in set")
+	ErrInvalidID      = errors.New("Element ID can not contain \":\"")
 )
 
 /* --- Database functions --- */
@@ -340,6 +341,9 @@ func NewHashMap(db *Database, id string) (*HashMap, error) {
 func (h *HashMap) Set(elementid, key, value string) (err error) {
 	if h.name == nil {
 		return ErrDoesNotExist
+	}
+	if strings.Contains(elementid, ":") {
+		return ErrInvalidID
 	}
 	return (*bolt.DB)(h.db).Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(h.name)

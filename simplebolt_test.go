@@ -264,3 +264,43 @@ func TestInterface(t *testing.T) {
 	// Check if the struct comforms to ICreator
 	var _ pinterface.ICreator = NewCreator(db)
 }
+
+func TestHashMap(t *testing.T) {
+	const (
+		hashname  = "abc123_test_test_test_123abc_123"
+		testid    = "bob"
+		testidInv = "b:ob"
+		testkey   = "password"
+		testvalue = "hunter1"
+	)
+	db := New(path.Join(os.TempDir(), "bolt.db"))
+	defer db.Close()
+	hash, err := NewHashMap(db, hashname)
+	if err != nil {
+		t.Error(err)
+	}
+	if err := hash.Set(testidInv, testkey, testvalue); err == nil {
+		t.Error("Should not be allowed to use an element id with \":\"")
+	}
+	if err := hash.Set(testid, testkey, testvalue); err != nil {
+		t.Errorf("Error, could not add item to hash map! %s", err.Error())
+	}
+	value2, err := hash.Get(testid, testkey)
+	if err != nil {
+		t.Error(err)
+	}
+	if value2 != testvalue {
+		t.Errorf("Got a different value in return! %s != %s", value2, testvalue)
+	}
+	items, err := hash.GetAll()
+	if len(items) != 1 {
+		t.Errorf("Error, wrong hash map length! %v", len(items))
+	}
+	if (len(items) > 0) && (items[0] != testid) {
+		t.Errorf("Error, wrong hash map id! %v", items)
+	}
+	err = hash.Remove()
+	if err != nil {
+		t.Errorf("Error, could not remove hash map! %s", err.Error())
+	}
+}
