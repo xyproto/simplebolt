@@ -4,7 +4,6 @@ import (
 	"github.com/xyproto/pinterface"
 	"os"
 	"path"
-	"strings"
 	"testing"
 )
 
@@ -108,13 +107,6 @@ func TestInc(t *testing.T) {
 	kv.Remove()
 	if _, err := kv.Get(testkey); err == nil {
 		t.Errorf("Error, could get key! %s", err.Error())
-	}
-}
-
-func TestTwoFields(t *testing.T) {
-	test, test23, ok := twoFields("test1@test2@test3", "@")
-	if ok && ((test != "test1") || (test23 != "test2@test3")) {
-		t.Error("Error in twoFields functions")
 	}
 }
 
@@ -271,16 +263,4 @@ func TestInterface(t *testing.T) {
 
 	// Check if the struct comforms to ICreator
 	var _ pinterface.ICreator = NewCreator(db)
-}
-
-/* --- Utility functions --- */
-
-// Split a string into two parts, given a delimiter.
-// Returns the two parts and true if it works out.
-func twoFields(s, delim string) (string, string, bool) {
-	if strings.Count(s, delim) != 1 {
-		return s, "", false
-	}
-	fields := strings.SplitN(s, delim, 2)
-	return fields[0], fields[1], true
 }
