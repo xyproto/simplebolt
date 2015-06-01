@@ -12,7 +12,10 @@ func TestList(t *testing.T) {
 		listname = "abc123_test_test_test_123abc"
 		testdata = "123abc"
 	)
-	db := New(path.Join(os.TempDir(), "bolt.db"))
+	db, err := New(path.Join(os.TempDir(), "bolt.db"))
+	if err != nil {
+		t.Error(err)
+	}
 	defer db.Close()
 	list, err := NewList(db, listname)
 	if err != nil {
@@ -40,7 +43,10 @@ func TestRemove(t *testing.T) {
 		testkey   = "sdsdf234234"
 		testvalue = "asdfasdf1234"
 	)
-	db := New(path.Join(os.TempDir(), "bolt.db"))
+	db, err := New(path.Join(os.TempDir(), "bolt.db"))
+	if err != nil {
+		t.Error(err)
+	}
 	defer db.Close()
 	kv, err := NewKeyValue(db, kvname)
 	if err != nil {
@@ -68,7 +74,10 @@ func TestInc(t *testing.T) {
 		testvalue1 = "10"
 		testvalue2 = "1"
 	)
-	db := New(path.Join(os.TempDir(), "bolt.db"))
+	db, err := New(path.Join(os.TempDir(), "bolt.db"))
+	if err != nil {
+		t.Error(err)
+	}
 	defer db.Close()
 	kv, err := NewKeyValue(db, kvname)
 	if err != nil {
@@ -111,7 +120,10 @@ func TestInc(t *testing.T) {
 }
 
 func TestVarious(t *testing.T) {
-	db := New(path.Join(os.TempDir(), "bolt.db"))
+	db, err := New(path.Join(os.TempDir(), "bolt.db"))
+	if err != nil {
+		t.Error(err)
+	}
 	defer db.Close()
 
 	kv, err := NewKeyValue(db, "fruit")
@@ -255,7 +267,10 @@ func TestVarious(t *testing.T) {
 
 func TestInterface(t *testing.T) {
 
-	db := New(path.Join(os.TempDir(), "bolt.db"))
+	db, err := New(path.Join(os.TempDir(), "bolt.db"))
+	if err != nil {
+		t.Error(err)
+	}
 	defer db.Close()
 
 	// Check that the database qualifies for the IHost interface
@@ -273,7 +288,10 @@ func TestHashMap(t *testing.T) {
 		testkey   = "password"
 		testvalue = "hunter1"
 	)
-	db := New(path.Join(os.TempDir(), "bolt.db"))
+	db, err := New(path.Join(os.TempDir(), "bolt.db"))
+	if err != nil {
+		t.Error(err)
+	}
 	defer db.Close()
 	hash, err := NewHashMap(db, hashname)
 	if err != nil {
