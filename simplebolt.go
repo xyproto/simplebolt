@@ -4,7 +4,6 @@ package simplebolt
 import (
 	"encoding/binary"
 	"errors"
-	"log"
 	"strconv"
 	"strings"
 
@@ -45,10 +44,19 @@ var (
 /* --- Database functions --- */
 
 // Create a new bolt database
+func NewChecked(filename string) (*Database, error) {
+	db, err := bolt.Open(filename, 0644, nil)
+	if err != nil {
+		return nil, err
+	}
+	return (*Database)(db), nil
+}
+
+// Create a new bolt database. May panic. Use NewChecked instead.
 func New(filename string) *Database {
 	db, err := bolt.Open(filename, 0644, nil)
 	if err != nil {
-		log.Fatalln(err)
+		panic(err)
 	}
 	return (*Database)(db)
 }
