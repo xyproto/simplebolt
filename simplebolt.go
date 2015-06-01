@@ -6,6 +6,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/boltdb/bolt"
 )
@@ -45,7 +46,8 @@ var (
 
 // Create a new bolt database
 func New(filename string) (*Database, error) {
-	db, err := bolt.Open(filename, 0644, nil)
+	// Use a timeout, in case the database file is already in use
+	db, err := bolt.Open(filename, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
 		return nil, err
 	}
