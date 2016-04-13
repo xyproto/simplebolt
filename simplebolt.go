@@ -182,7 +182,7 @@ func (l *List) Clear() error {
 	if l.name == nil {
 		return ErrDoesNotExist
 	}
-	return (*bolt.DB)(l.db).View(func(tx *bolt.Tx) error {
+	return (*bolt.DB)(l.db).Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(l.name)
 		if bucket == nil {
 			return ErrBucketNotFound
@@ -467,7 +467,7 @@ func (h *HashMap) Del(elementid string) error {
 		return ErrDoesNotExist
 	}
 	// Remove the keys starting with elementid + ":"
-	return (*bolt.DB)(h.db).View(func(tx *bolt.Tx) error {
+	return (*bolt.DB)(h.db).Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(h.name)
 		if bucket == nil {
 			return ErrBucketNotFound
