@@ -258,13 +258,13 @@ func TestVarious(t *testing.T) {
 	h.Set("john", "email", "john@zombo.com")
 
 	h.Del("john")
-	found , err := h.Exists("john")
+	found, err := h.Exists("john")
 	if err != nil {
 		t.Error(err)
 	}
 	if found {
 		t.Error("not supposed to exist")
-	} 
+	}
 
 	h.Remove()
 

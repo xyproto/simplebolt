@@ -68,7 +68,7 @@ func main() {
 Version, license and author
 ---------------------------
 
-* API version: 3.0
 * License: MIT
-* Author: Alexander F Rødseth
+* API version: 3.0
+* Author: Alexander F Rødseth <xyproto@archlinux.org>
 
