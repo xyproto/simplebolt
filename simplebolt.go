@@ -1,6 +1,6 @@
 // Package simplebolt provides a simple way to use the Bolt database.
 // The API design is similar to xyproto/simpleredis, and the database backends
-// are interchangable, by using the xyproto/pinterface package.
+// are interchangeable, by using the xyproto/pinterface package.
 package simplebolt
 
 import (
