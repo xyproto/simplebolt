@@ -25,6 +25,9 @@ func TestList(t *testing.T) {
 		t.Errorf("Error, could not add item to list! %s", err.Error())
 	}
 	items, err := list.GetAll()
+	if err != nil {
+		t.Error(err)
+	}
 	if len(items) != 1 {
 		t.Errorf("Error, wrong list length! %v", len(items))
 	}
@@ -138,7 +141,7 @@ func TestVarious(t *testing.T) {
 		t.Error("Could not set a key+value:", err)
 	}
 
-	val, err := kv.Get("banana")
+	_, err = kv.Get("banana")
 	if err != nil {
 		t.Error("Could not get value:", err)
 	}
@@ -156,7 +159,7 @@ func TestVarious(t *testing.T) {
 		t.Error(err)
 	}
 
-	val, err = kv.Get("doesnotexist")
+	_, _ = kv.Get("doesnotexist")
 	//fmt.Println("does not exist", val, err)
 
 	kv.Remove()
@@ -225,7 +228,7 @@ func TestVarious(t *testing.T) {
 	// Check that the set qualifies for the ISet interface
 	var _ pinterface.ISet = s
 
-	val, err = kv.Inc("counter")
+	val, err := kv.Inc("counter")
 	if (val != "1") || (err != nil) {
 		t.Error("counter should be 1 but is", val)
 	}
@@ -328,6 +331,9 @@ func TestHashMap(t *testing.T) {
 		t.Errorf("Got a different value in return! %s != %s", value2, testvalue)
 	}
 	items, err := hash.GetAll()
+	if err != nil {
+		t.Error(err)
+	}
 	if len(items) != 1 {
 		t.Errorf("Error, wrong hash map length! %v", len(items))
 	}

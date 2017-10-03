@@ -70,5 +70,5 @@ Version, license and author
 
 * License: MIT
 * API version: 3.0
-* Author: Alexander F Rødseth <xyproto@archlinux.org>
+* Author: Alexander F Rødseth &lt;xyproto@archlinux.org&gt;
 
