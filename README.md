@@ -18,6 +18,7 @@ Features and limitations
 
 * Supports simple use of lists, hashmaps, sets and key/values
 * Deals mainly with strings
+* gcc-go is unable to run the `go test` tests, but it works fine on Go 1.9.
 
 
 Example usage
