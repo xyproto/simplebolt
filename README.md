@@ -16,10 +16,10 @@ Online API Documentation
 Features and limitations
 ------------------------
 
-* Supports simple use of lists, hashmaps, sets and key/values
-* Deals mainly with strings
-* gcc-go is unable to run the `go test` tests, but it works fine on Go 1.9.
-
+* Supports simple use of lists, hashmaps, sets and key/values.
+* Deals mainly with strings.
+* Requires Go 1.3 or later.
+* The latest version of `gccgo` (7.2.0) is able to compile `simplebolt`, but it does not appear to be able to compile it correctly. There are runtime errors when running `go test`, that work fine when compiling `simplebolt` with the regular Go compiler.
 
 Example usage
 -------------
