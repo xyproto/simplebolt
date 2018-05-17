@@ -296,7 +296,7 @@ func TestInterface(t *testing.T) {
 	// Check that the database qualifies for the IHost interface
 	var _ pinterface.IHost = db
 
-	// Check if the struct comforms to ICreator
+	// Check if the struct conforms to ICreator
 	var _ pinterface.ICreator = NewCreator(db)
 }
 
