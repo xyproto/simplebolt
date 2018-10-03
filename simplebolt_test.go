@@ -340,7 +340,7 @@ func TestHashMap(t *testing.T) {
 	if (len(items) > 0) && (items[0] != testid) {
 		t.Errorf("Error, wrong hash map id! %v", items)
 	}
-	props, err := hash.GetProps(testid)
+	props, err := hash.Properties(testid)
 	if err != nil {
 		t.Error(err)
 	}

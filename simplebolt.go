@@ -426,10 +426,10 @@ func (h *HashMap) Has(elementid, key string) (found bool, err error) {
 	})
 }
 
-// GetProps returns the sub-keys for a given key
+// Properties returns the sub-keys for a given key.
 // This can be used for listing the available properties for a username,
 // for example.
-func (h *HashMap) GetProps(key string) ([]string, error) {
+func (h *HashMap) Properties(key string) ([]string, error) {
 	var props []string
 	return props, (*bolt.DB)(h.db).View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(h.name))
