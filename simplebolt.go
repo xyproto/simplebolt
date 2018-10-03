@@ -426,6 +426,29 @@ func (h *HashMap) Has(elementid, key string) (found bool, err error) {
 	})
 }
 
+// GetProps returns the sub-keys for a given key
+// This can be used for listing the available properties for a username,
+// for example.
+func (h *HashMap) GetProps(key string) ([]string, error) {
+	var props []string
+	return props, (*bolt.DB)(h.db).View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(h.name))
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		// Loop through the keys
+		return bucket.ForEach(func(byteKey, _ []byte) error {
+			combinedKey := string(byteKey)
+			if strings.HasPrefix(combinedKey, key+":") {
+				// Store the right side of the bucket key, after ":"
+				fields := strings.SplitN(combinedKey, ":", 2)
+				props = append(props, string(fields[1]))
+			}
+			return nil // Continue ForEach
+		})
+	})
+}
+
 // Check if a given elementid exists as a hash map at all
 func (h *HashMap) Exists(elementid string) (found bool, err error) {
 	if h.name == nil {

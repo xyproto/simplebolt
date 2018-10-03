@@ -340,6 +340,18 @@ func TestHashMap(t *testing.T) {
 	if (len(items) > 0) && (items[0] != testid) {
 		t.Errorf("Error, wrong hash map id! %v", items)
 	}
+	props, err := hash.GetProps(testid)
+	if err != nil {
+		t.Error(err)
+	}
+	// only "password"
+	if len(props) != 1 {
+		t.Errorf("Error, wrong properties: %v\n", props)
+	}
+	if props[0] != "password" {
+		t.Errorf("Error, wrong properties: %v\n", props)
+	}
+
 	err = hash.Remove()
 	if err != nil {
 		t.Errorf("Error, could not remove hash map! %s", err.Error())
