@@ -24,7 +24,7 @@ func TestList(t *testing.T) {
 	if err := list.Add(testdata); err != nil {
 		t.Errorf("Error, could not add item to list! %s", err.Error())
 	}
-	items, err := list.GetAll()
+	items, err := list.All()
 	if err != nil {
 		t.Error(err)
 	}
@@ -174,7 +174,7 @@ func TestVarious(t *testing.T) {
 	l.Add("pear")
 	l.Add("apple")
 
-	if _, err := l.GetAll(); err != nil {
+	if _, err := l.All(); err != nil {
 		t.Error(err)
 	}
 
@@ -186,7 +186,7 @@ func TestVarious(t *testing.T) {
 		t.Error("last one should be apple")
 	}
 
-	lastN, err := l.GetLastN(3)
+	lastN, err := l.LastN(3)
 	if err != nil {
 		t.Error(err)
 	}
@@ -211,12 +211,12 @@ func TestVarious(t *testing.T) {
 	s.Add("2")
 	s.Add("7")
 	s.Add("8")
-	_, err = s.GetAll()
+	_, err = s.All()
 	if err != nil {
 		t.Error(err)
 	}
 	s.Clear()
-	v, err := s.GetAll()
+	v, err := s.All()
 	if err != nil {
 		t.Error(err)
 	}
@@ -245,7 +245,7 @@ func TestVarious(t *testing.T) {
 	h.Set("bob", "password", "hunter1")
 	h.Set("bob", "email", "bob@zombo.com")
 
-	h.GetAll()
+	h.All()
 
 	_, err = h.Has("bob", "password")
 	if err != nil {
@@ -330,7 +330,7 @@ func TestHashMap(t *testing.T) {
 	if value2 != testvalue {
 		t.Errorf("Got a different value in return! %s != %s", value2, testvalue)
 	}
-	items, err := hash.GetAll()
+	items, err := hash.All()
 	if err != nil {
 		t.Error(err)
 	}
@@ -340,16 +340,16 @@ func TestHashMap(t *testing.T) {
 	if (len(items) > 0) && (items[0] != testid) {
 		t.Errorf("Error, wrong hash map id! %v", items)
 	}
-	props, err := hash.Properties(testid)
+	keys, err := hash.Keys(testid)
 	if err != nil {
 		t.Error(err)
 	}
 	// only "password"
-	if len(props) != 1 {
-		t.Errorf("Error, wrong properties: %v\n", props)
+	if len(keys) != 1 {
+		t.Errorf("Error, wrong keys: %v\n", keys)
 	}
-	if props[0] != "password" {
-		t.Errorf("Error, wrong properties: %v\n", props)
+	if keys[0] != "password" {
+		t.Errorf("Error, wrong keys: %v\n", keys)
 	}
 
 	err = hash.Remove()
