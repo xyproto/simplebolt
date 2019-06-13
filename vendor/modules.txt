@@ -1,6 +1,6 @@
-# github.com/etcd-io/bbolt v1.3.2
+# github.com/etcd-io/bbolt v1.3.3
 github.com/etcd-io/bbolt
 # github.com/xyproto/pinterface v0.0.0-20181004125811-9710ef24b684
 github.com/xyproto/pinterface
-# golang.org/x/sys v0.0.0-20190219092855-153ac476189d
+# golang.org/x/sys v0.0.0-20190610200419-93c9922d18ae
 golang.org/x/sys/unix
