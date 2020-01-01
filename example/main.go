@@ -26,7 +26,7 @@ func main() {
 	}
 
 	// Get the last item of the list
-	if item, err := list.GetLast(); err != nil {
+	if item, err := list.Last(); err != nil {
 		log.Fatalf("Could not fetch the last item from the list! %s", err)
 	} else {
 		log.Println("The value of the stored item is:", item)

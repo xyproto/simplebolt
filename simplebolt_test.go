@@ -178,7 +178,7 @@ func TestVarious(t *testing.T) {
 		t.Error(err)
 	}
 
-	last, err := l.GetLast()
+	last, err := l.Last()
 	if err != nil {
 		t.Error(err)
 	}
