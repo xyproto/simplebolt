@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package currency;
+
+option go_package = "currencypb";
+
+message Currency {
+  string name = 1;
+  string highest_price_date = 2;
+  string highest_price = 3;
+}
