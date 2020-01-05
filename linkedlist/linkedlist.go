@@ -593,6 +593,8 @@ func (sd *storedData) Remove() error {
 		}
 
 		// Let the Go Garbage Collector do its job.
+		sd.key = nil
+		sd.value = nil
 		sd = nil
 		return nil
 	})
