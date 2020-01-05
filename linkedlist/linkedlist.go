@@ -29,7 +29,7 @@ type (
 	}
 
 	// LinkedList is a doubly linked list. It is persisted using etcd-io/bbolt's b+tree
-	// as its underlying data structure but with a simply linked list-like behaviour
+	// as its underlying data structure but with a doubly linked list-like behaviour
 	LinkedList boltBucket
 
 	// storedData used its fields key, value and internal_ll to perform operations that
@@ -237,10 +237,13 @@ func (ll *LinkedList) PushFront(data []byte) error {
 }
 
 // Front returns the element at the front of the linked list.
+// Returns a nil item if the list is empty.
+//
 // It may return an error in case of:
-// * Empty linked list - a list with no elements
-// * bbolt.View() error
-// * proto.Unmarshal() error
+//
+// bbolt.View() error
+//
+// proto.Unmarshal() error
 func (ll *LinkedList) Front() (i *Item, err error) {
 	return i, (*bbolt.DB)(ll.db).View(func(tx *bbolt.Tx) error {
 		k, val, empty, err := ll.first()
@@ -248,7 +251,8 @@ func (ll *LinkedList) Front() (i *Item, err error) {
 			return err
 		}
 		if empty {
-			return fmt.Errorf("Empty linked list")
+			i, err = nil, nil
+			return err
 		}
 		llFirstNode := &pb.LinkedListNode{}
 		if err := proto.Unmarshal(val, llFirstNode); err != nil {
@@ -266,10 +270,13 @@ func (ll *LinkedList) Front() (i *Item, err error) {
 }
 
 // Back returns the element at the back of the linked list.
+// Returns a nil item if the list is empty.
+//
 // It may return an error in case of:
-// * Empty linked list - a list with no elements
-// * bbolt.View() error
-// * proto.Unmarshal() error
+//
+// bbolt.View() error
+//
+// proto.Unmarshal() error
 func (ll *LinkedList) Back() (i *Item, err error) {
 	return i, (*bbolt.DB)(ll.db).View(func(tx *bbolt.Tx) error {
 		k, val, empty, err := ll.last()
@@ -277,7 +284,8 @@ func (ll *LinkedList) Back() (i *Item, err error) {
 			return err
 		}
 		if empty {
-			return fmt.Errorf("Empty linked list")
+			i, err = nil, nil
+			return err
 		}
 		llLastNode := &pb.LinkedListNode{}
 		if err := proto.Unmarshal(val, llLastNode); err != nil {
