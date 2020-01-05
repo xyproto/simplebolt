@@ -584,10 +584,7 @@ func (sd *storedData) Remove() error {
 			return fmt.Errorf("Could not delete key. %v", err)
 		}
 
-		// clear in-memory linked list stored data
-		sd.key = nil
-		sd.value = nil
-		sd.internal_ll = nil
+		// Let the Go Garbage Collector do its job.
 		sd = nil
 		return nil
 	})
