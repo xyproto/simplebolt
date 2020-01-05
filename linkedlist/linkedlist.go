@@ -451,10 +451,13 @@ func (i *Item) Prev() *Item {
 	return i
 }
 
+// Value returns the current value of the element at which the item refers to.
 func (sd storedData) Value() []byte {
 	return sd.value
 }
 
+// Update resets the value of the element at which the item refers to with the newData.
+// Returns "Empty data" error if newData is nil
 func (sd *storedData) Update(newData []byte) error {
 	// Checks whether there is new data.
 	// Nothing gets updated if newData is nil and returns Empty data.

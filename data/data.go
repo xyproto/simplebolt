@@ -3,9 +3,19 @@
 
 package data
 
-// StoredData is the set of methods that provides access to every container.
+// StoredData is the set of methods that provides access to the
+// element's underlying data in every data structure.
 type StoredData interface {
+	// Value returns the current value of the element at which the item refers
+	// to.
 	Value() []byte
-	Update([]byte) error
+
+	// Update resets the value of the element at which the item refers to
+	// with newData.
+	//
+	// Returns "Empty data" error if newData is nil.
+	Update(newData []byte) error
+
+	// Remove deletes from Bolt the element at which the item data refers to.
 	Remove() error
 }
