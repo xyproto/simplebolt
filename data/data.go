@@ -7,5 +7,5 @@ package data
 type StoredData interface {
 	Value() []byte
 	Update([]byte) error
-	Delete() error
+	Remove() error
 }

@@ -495,8 +495,8 @@ func (sd *storedData) Update(newData []byte) error {
 	})
 }
 
-// Delete deletes from Bolt the element at which the item data refers to
-func (sd *storedData) Delete() error {
+// Remove deletes from Bolt the element at which the item data refers to
+func (sd *storedData) Remove() error {
 	listName := sd.internal_ll.name
 	db := (*bbolt.DB)(sd.internal_ll.db)
 
@@ -576,7 +576,7 @@ func (sd *storedData) Delete() error {
 			}
 		}
 
-		// Delete this node from Bolt
+		// Remove this node from Bolt
 		if err = bucket.Delete(sd.key); err != nil {
 			return fmt.Errorf("Could not delete key. %v", err)
 		}
