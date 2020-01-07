@@ -1,7 +1,8 @@
-// linkedlist.go provides a simple way to use the Bolt database
-// and store data in a doubly linked list-like data structure manner,
-// but keeping bolt's binary tree as its underlying data structure.
 package simplebolt
+
+// linkedlist.go provides a simple way to use the Bolt database and store data in a
+// doubly linked list-like data structure manner, but keeping bolt's binary tree as
+// its underlying data structure.
 
 import (
 	"errors"
