@@ -6,6 +6,7 @@ package linkedlist
 import (
 	"encoding/binary"
 	"errors"
+	"bytes"
 	"fmt"
 	"log"
 
@@ -270,7 +271,7 @@ func (ll *LinkedList) Front() (i *Item, err error) {
 }
 
 // Back returns the element at the back of the linked list.
-// Returns a nil item if the list is empty.
+// It returns a nil item if the list is empty.
 //
 // It may return an error in case of:
 //
@@ -336,6 +337,196 @@ func (ll *LinkedList) last() (key, val []byte, empty bool, err error) {
 		return nil
 	})
 	return
+}
+
+// Get compares val with the value of every single node in the linked list,
+// using bytes.Equal(). If it finds that v and the value of some node are
+// equal, according to its criteria, then Get returns the item containing
+// the value of the stored data.
+//
+// Note that you must provide a []byte with a value in exactly the same
+// format as the stored data in the linked list. For a more flexible criteria on
+// the equality of the given value and the value in the stored data, see GetFunc.
+// 
+// If Get can't find any matches, it returns an nil item and a nil error.
+//
+// It may return an error due to a failed call to ll.Front().
+// It also returns either an "Empty list" error when called on a list with no elements,
+// or an "Empty val" error when called with a nil []byte val. In all the cases, the
+// returned item is nil.
+//
+// Note that both Get and GetFunc always return the first match, if any. If you inserted
+// multiple copies of the same data into the same linked list and you want to retrieve
+// them, you must call GetNext or GetNextFunc sucesively after a call either to Get,
+// GetFunc, GetNext or GetNextFunc, passing in the item returned by one of these
+// methods.
+func(ll *LinkedList) Get(val []byte) (*Item, error) {
+	// Check whether the list has no elements
+	front, err := ll.Front()
+	if err != nil {
+		return nil, err
+	}
+	if front == nil {
+		return nil, fmt.Errorf("Empty list")
+	}
+	// Check whether the user provided a value to get
+	if val == nil {
+		return nil, fmt.Errorf("Empty val")
+	}
+	var it *Item
+	// Search from the front of the list until either
+	// the end of the list or a match has been found.
+	for k := front; k != nil; k = k.Next() {
+		if bytes.Equal(val, k.Data.Value()) {
+			// Found it!
+			it = k
+			break
+		}
+	}
+	return it, nil
+}
+
+// GetFunc compares val with the value of every single node in the linked list,
+// using the provided func to compare the given value and the value of the
+// stored data. That way, you can define the criteria of equality between the two
+// values that suits your data available at some point in time.
+// 
+// If GetFunc can't find any matches, it returns an nil item and a nil error.
+//
+// It may return an error due to a failed call to ll.Front().
+// It also returns either an "Empty list" error when called on a list with no elements,
+// an "Empty val" error when called with a nil interface{} val or an "Empty comparing
+// function" when called with a nil function to compare. In all the cases, the returned
+// item is nil.
+//
+// Note that both Get and GetFunc always return the first match, if any. If you inserted
+// multiple copies of the same data into the same linked list and you want to retrieve
+// them, you must call GetNext or GetNextFunc successively after a call either to Get,
+// GetFunc, GetNext or GetNextFunc, passing in the item returned by one of these
+// methods.
+//
+// For an example on the usage, see example/linkedlist/main.go
+func(ll *LinkedList) GetFunc(val interface{}, equal func(a interface{}, b []byte) bool) (*Item, error) {
+	// Check whether the list has no elements
+	front, err := ll.Front()
+	if err != nil {
+		return nil, err
+	}
+	if front == nil {
+		return nil, fmt.Errorf("Empty list")
+	}
+	// Check whether the user provided a value to get
+	if val == nil {
+		return nil, fmt.Errorf("Empty val")
+	}
+	// Check whether the user provided a function to compare for equality
+	if equal == nil {
+		return nil, fmt.Errorf("Empty comparing function")
+	}
+	var it *Item
+	// Search from the front of the list until either
+	// the end of the list or a match has been found.
+	for k := front; k != nil; k = k.Next() {
+		if equal(val, k.Data.Value()) {
+			// Found it!
+			it = k
+			break
+		}
+	}
+	return it, nil
+}
+
+// GetNext compares val with the value of every single node in the linked list,
+// starting from the next item of the element pointed to by mark, using
+// bytes.Equal(). If it finds that v and the value of some node are equal,
+// according to its criteria, then Get returns the item containing the value of
+// the stored data.
+// 
+// If GetNext can't find any match, it returns an nil item and a nil error.
+//
+// It may return an error due to a failed call to bbolt.View.
+// It returns either an "Empty list" error when called on a list with no elements, 
+// an "Empty val" error when called with a nil val to get, or an "Empty mark" error
+// when called with a nil mark to begin from. In all the cases the item returned
+// is nil.
+//
+// Note that you must pass in a []byte with a value in exactly the same
+// format as the stored data in the linked list. For a more flexible criteria on
+// the equality of the given value and the value in the stored data, see GetFunc and 
+// GetNextFunc.
+func(ll *LinkedList) GetNext(val []byte, mark *Item) (*Item, error) {
+	// Check whether the linked list has no elements
+	_, _, empty, err := ll.first()
+	if err != nil {
+		return nil, err
+	}
+	if empty {
+		return nil, fmt.Errorf("Empty list")
+	}
+	// Check whether the user provided a value to get
+	if val == nil {
+		return nil, fmt.Errorf("Empty val")
+	}
+	// Check whether the user provided a mark to begin from
+	if mark == nil {
+		return nil, fmt.Errorf("Empty mark")
+	}
+	var it *Item
+	// Search from the mark either until the end of the list or a match has been found.
+	for k := mark; k != nil; k = k.Next() {
+		if bytes.Equal(val, k.Data.Value()) {
+			// Found it!
+			it = k
+			break
+		}
+	}
+	return it, nil
+}
+
+// GetNextFunc compares val with the value of every single node in the linked list,
+// starting from the next item of the element pointed to by mark, using the provided
+// function. If it finds that v and the value of some node are equal, according to
+// its criteria, then GetNextFunc returns the item containing the value of the
+// stored data.
+// 
+// If GetNextFunc can't find any matches, it returns an nil item and a nil error.
+//
+// It returns either an "Empty val" error when called with a nil []byte val, an
+// "Empty mark" error when called with a nil beggining mark, or an "Empty comparing 
+// function" when called with a nil function to compare.
+//
+// For an example on the usage, see example/linkedlist/main.go
+func(ll *LinkedList) GetNextFunc(val interface{}, mark *Item, equal func(a interface{}, b []byte) bool) (*Item, error) {
+	// Check whether the linked list has no elements
+	_, _, empty, err := ll.first()
+	if err != nil {
+		return nil, err
+	}
+	if empty {
+		return nil, fmt.Errorf("Empty list")
+	}
+	// Check whether the user provided a value to get
+	if val == nil {
+		return nil, fmt.Errorf("Empty val")
+	}
+	// Check whether the user provided a mark to begin from
+	if mark == nil {
+		return nil, fmt.Errorf("Empty mark")
+	}
+	// Check ehwther the user provided a function to compare for equality
+	if equal == nil {
+		return nil, fmt.Errorf("Empty comparing function")
+	}
+	var it *Item
+	// Search from the mark either until the end of the list or a match has been found.
+	for k := mark; k != nil; k = k.Next() {
+		if equal(val, k.Data.Value()) {
+			// Found it!
+			it = k
+			break
+		}
+	}
+	return it, nil
 }
 
 /* --- Utility functions --- */
