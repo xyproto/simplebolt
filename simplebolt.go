@@ -59,6 +59,10 @@ var (
 
 	// ErrFoundIt is only used internally, for breaking out of Bolt DB style for-loops
 	ErrFoundIt = errors.New("Found it")
+
+	// errReachedEnd is used internally by traversing methods to indicate that the
+	// end of the data structure has been reached.
+	errReachedEnd = errors.New("Reached end of data structure")
 )
 
 /* --- Database functions --- */

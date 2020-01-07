@@ -1,10 +1,9 @@
-// Package linkedlist provides a simple way to use the Bolt database
+// linkedlist.go provides a simple way to use the Bolt database
 // and store data in a doubly linked list-like data structure manner,
 // but keeping bolt's binary tree as its underlying data structure.
-package linkedlist
+package simplebolt
 
 import (
-	"encoding/binary"
 	"errors"
 	"bytes"
 	"fmt"
@@ -12,30 +11,17 @@ import (
 
 	"github.com/etcd-io/bbolt"
 	"github.com/golang/protobuf/proto"
-	"github.com/xyproto/simplebolt"
-	"github.com/xyproto/simplebolt/data"
-	pb "github.com/xyproto/simplebolt/nodes_pb"
-)
-
-const (
-	// Version number. Stable API within major version numbers.
-	Version = 3.4
+	pb "github.com/xyproto/simplebolt/ll_nodes_pb"
 )
 
 type (
-	// Used for each of the datatypes
-	boltBucket struct {
-		db   *simplebolt.Database // the Bolt database
-		name []byte               // the bucket name
-	}
-
 	// LinkedList is a doubly linked list. It is persisted using etcd-io/bbolt's b+tree
 	// as its underlying data structure but with a doubly linked list-like behaviour
 	LinkedList boltBucket
 
 	// storedData used its fields key, value and internal_ll to perform operations that
-	// modify the corresponding values in Bolt. It implements data.StoredData and should
-	// be returned from LinkedList.Front() and LinkedList.Back()
+	// modify the corresponding values in Bolt. It implements StoredData, hence can be
+	// used to build a variable of type Item wherever needed.
 	storedData struct {
 		// Key of the current item
 		key []byte
@@ -46,41 +32,21 @@ type (
 		internal_ll *LinkedList
 	}
 
-	// Item is the element of the linked list returned by Front(), Back(), Next() and Prev().
-	// It enables access to the underlying data in bbolt for getting an updating it.
+	// Item is the element of the linked list returned by Front(), Back(), Next(), Prev(),
+	// and all the Getters.
+	//
+	// It enables access to the underlying data in Bolt for getting an updating it.
 	//
 	// It can be used to traverse the linked list across every node of the data structure,
-	// by calling Prev() and Next(). To retrieve, change or delete the underlying data,
-	// the Data field has the corresponding methods.
+	// by calling Prev(), Next() and any of the Getter methods. To retrieve, change or
+	// delete the underlying data, the Data field has the corresponding methods.
 	Item struct {
-		Data data.StoredData
+		Data StoredData
 	}
 )
 
-var (
-	// ErrBucketNotFound may be returned if a no Bolt bucket was found
-	ErrBucketNotFound = errors.New("Bucket not found")
-
-	// ErrKeyNotFound will be returned if the key was not found in a HashMap or KeyValue struct
-	ErrKeyNotFound = errors.New("Key not found")
-
-	// ErrDoesNotExist will be returned if an element was not found. Used in List, Set, HashMap and KeyValue.
-	ErrDoesNotExist = errors.New("Does not exist")
-
-	// ErrExistsInSet is only returned if an element is added to a Set, but it already exists
-	ErrExistsInSet = errors.New("Element already exists in set")
-
-	// ErrInvalidID is only returned if adding an element to a HashMap that contains a colon (:)
-	ErrInvalidID = errors.New("Element ID can not contain \":\"")
-
-	// ErrFoundIt is only used internally, for breaking out of Bolt DB style for-loops
-	ErrFoundIt = errors.New("Found it")
-
-	ErrReachedEnd = errors.New("Reached end of data structure")
-)
-
 // New returns a new doubly linkedlist with the given id as its identifier
-func New(db *simplebolt.Database, id string) (*LinkedList, error) {
+func NewLinkedList(db *Database, id string) (*LinkedList, error) {
 	name := []byte(id)
 	if err := (*bbolt.DB)(db).Update(func(tx *bbolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists(name); err != nil {
@@ -529,15 +495,6 @@ func(ll *LinkedList) GetNextFunc(val interface{}, mark *Item, equal func(a inter
 	return it, nil
 }
 
-/* --- Utility functions --- */
-
-// Create a byte slice from an uint64
-func byteID(x uint64) []byte {
-	b := make([]byte, 8)
-	binary.BigEndian.PutUint64(b, x)
-	return b
-}
-
 // Next returns the next item pointed to by the current linked list item.
 //
 // It should be called after Front(). Otherwise always returns nil.
@@ -570,7 +527,7 @@ func (i *Item) Next() *Item {
 		// Get next node
 		val = bucket.Get(nextKey)
 		if val == nil {
-			return ErrReachedEnd
+			return errReachedEnd
 		}
 		// Get next node
 		nextNode := &pb.LinkedListNode{}
@@ -584,7 +541,7 @@ func (i *Item) Next() *Item {
 		return nil
 	})
 	if err != nil {
-		if err == ErrReachedEnd {
+		if err == errReachedEnd {
 			return nil
 		} else {
 			log.Fatalf("Could not get next: %v\n", err)
@@ -626,7 +583,7 @@ func (i *Item) Prev() *Item {
 		// Get prev node
 		val = bucket.Get(prevKey)
 		if val == nil {
-			return ErrReachedEnd
+			return errReachedEnd
 		}
 		// Get prev node
 		prevNode := &pb.LinkedListNode{}
@@ -640,7 +597,7 @@ func (i *Item) Prev() *Item {
 		return nil
 	})
 	if err != nil {
-		if err == ErrReachedEnd {
+		if err == errReachedEnd {
 			return nil
 		} else {
 			log.Fatalf("Could not get next: %v\n", err)

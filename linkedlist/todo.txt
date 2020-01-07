@@ -1,0 +1,27 @@
+TODO
+// Get compares v with the value of every single node in the linked list,
+// using bytes.Equal(). If it finds that v and the value of some node are
+// equal, according to its criteria, then Get returns the item containing
+// the value of the stored data.
+//
+// Note that you must provide a []byte with a value in exactly the same
+// format as the stored data in the linked list. For a more flexible criteria on
+// the equality of the given value and the value in the stored data, see GetFunc
+func(ll *LinkedList) Get(v []byte) (*Item, error)
+
+// GetFunc compares v with the value of every single node in the linked list,
+// using the provided func to compare the given
+// value and the value of the stored data. That way, you can define the criteria
+// of equality between the two values that suits your data available at some
+// point in time. For an example on the usage, see example/linkedlist/main.go
+func(ll *LinkedList) GetFunc(v interface{}, func(a interface{}, b []byte) bool) (*Item, error)
+
+func(ll *LinkedList) InsertAfter([]byte, mark *Item) error
+func(ll *LinkedList) InsertBefore([]byte, mark *Item) error
+func(ll *LinkedList) MoveAfter([]byte, mark *Item) error
+func(ll *LinkedList) MoveBefore([]byte, mark *Item) error
+
+InsertAfter, InsertBefore, MoveAfter and MoveBefore's mark parameter should be an item returned from Front(), Back() or Get([]Byte)
+
+func(ll *LinkedList) MoveToFront([]byte) error
+func(ll *LinkedList) MoveToBack([]byte) error

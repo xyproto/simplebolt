@@ -1,17 +1,17 @@
-// Package data defines the common set of methods among containers
+// data.go defines the common set of methods among containers
 // to get and set the values of their underlying data.
 
-package data
+package simplebolt
 
 // StoredData is the set of methods that provides access to the
 // element's underlying data in every data structure.
 type StoredData interface {
-	// Value returns the current value of the element at which the item refers
-	// to.
+	// Value returns the current value of the
+	// element at which the item refers to.
 	Value() []byte
 
-	// Update resets the value of the element at which the item refers to
-	// with newData.
+	// Update resets the value of the element at
+	// which the item refers to with newData.
 	//
 	// Returns "Empty data" error if newData is nil.
 	Update(newData []byte) error
