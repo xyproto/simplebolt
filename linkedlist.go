@@ -497,7 +497,7 @@ func(ll *LinkedList) GetNextFunc(val interface{}, mark *Item, equal func(a inter
 
 // Next returns the next item pointed to by the current linked list item.
 //
-// It should be called after Front(). Otherwise always returns nil.
+// It should be called after Front() or any Getter method. Otherwise always returns nil.
 func (i *Item) Next() *Item {
 	// Type assert the StoredData interface to a *storedData type
 	currentKey := i.Data.(*storedData).key
@@ -553,7 +553,7 @@ func (i *Item) Next() *Item {
 
 // Prev returns the previous item pointed to by the current linked list item.
 //
-// It should be called after Back(). Otherwise always returns nil.
+// It should be called after Back() or any Getter method. Otherwise always returns nil.
 func (i *Item) Prev() *Item {
 	currentKey := i.Data.(*storedData).key
 	// Check whether the LinkedListItem refers to an actual item.
@@ -612,8 +612,11 @@ func (sd storedData) Value() []byte {
 	return sd.value
 }
 
-// Update resets the value of the element at which the item refers to with the newData.
-// Returns "Empty data" error if newData is nil
+// Update resets the value of the element at which the item refers
+// to with the newData. Returns "Empty data" error if newData is nil.
+//
+// It may also return an error in case of bbolt Update or protocol buffer
+// serialization/deserialization fail. In both cases, the data isn't updated.
 func (sd *storedData) Update(newData []byte) error {
 	// Checks whether there is new data.
 	// Nothing gets updated if newData is nil and returns Empty data.
@@ -654,7 +657,10 @@ func (sd *storedData) Update(newData []byte) error {
 	})
 }
 
-// Remove deletes from Bolt the element at which the item data refers to
+// Remove deletes from Bolt the element at which the item data refers to.
+//
+// It may return an error in case of bbolt Update or protocol buffer
+// serialization/deserialization fail. In both cases, the data isn't removed.
 func (sd *storedData) Remove() error {
 	listName := sd.internal_ll.name
 	db := (*bbolt.DB)(sd.internal_ll.db)

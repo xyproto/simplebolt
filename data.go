@@ -14,8 +14,14 @@ type StoredData interface {
 	// which the item refers to with newData.
 	//
 	// Returns "Empty data" error if newData is nil.
+	//
+	// It may also return an error in case of bbolt Update or protocol buffer
+	// serialization/deserialization fail. In both cases, the data isn't updated.
 	Update(newData []byte) error
 
 	// Remove deletes from Bolt the element at which the item data refers to.
+	//
+	// It may return an error in case of bbolt Update or protocol buffer
+	// serialization/deserialization fail. In both cases, the data isn't removed.
 	Remove() error
 }
