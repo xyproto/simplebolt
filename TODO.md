@@ -12,6 +12,3 @@
 - `func(ll *LinkedList) MoveBefore([]byte, mark Item) error`
 
 - `InsertAfter`, `InsertBefore`, `MoveAfter` and `MoveBefore`'s mark parameter should be an `Item` - returned from `Front()`, `Back()` or any of the `Getters`.
-
-- `func(ll *LinkedList) MoveToFront(Item) error`
-- `func(ll *LinkedList) MoveToBack(Item) error`
