@@ -6,8 +6,6 @@
 - [ ] Improve hash map implementation
 
 #### On linkedlist data structure
-- `func(ll *LinkedList) InsertAfter([]byte, mark *Item) error`
-- `func(ll *LinkedList) InsertBefore([]byte, mark *Item) error`
 - `func(ll *LinkedList) MoveAfter(it *Item, mark *Item) error`
 - `func(ll *LinkedList) MoveBefore(it *Item, mark *Item) error`
 
