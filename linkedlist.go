@@ -771,7 +771,7 @@ func (sd *storedData) Remove() error {
 	})
 }
 
-// MoveToFront moves the element pointed to by the given item to the front of the
+// MoveToFront moves the element pointed to by the given Item to the front of the
 // linked list.
 //
 // The element being moved must belong to the linkedlist at which it is being moved.
@@ -779,9 +779,9 @@ func (sd *storedData) Remove() error {
 //
 // It returns a "Nil item" error in case of a nil Item argument, an "Empty list" error in
 // case of being called on a list with no elements, and an "Invalid item" error in case
-// of passing an item that wasn't returned by one of the defined methods.
+// of passing an item that wasn't returned by one of the linkedlist methods.
 //
-// Other errors returned may be due to bolt read/write or serialization/deserialization of
+// Other errors returned may be due to Bolt read/write or serialization/deserialization of
 // the data operation fail.
 func(ll *LinkedList) MoveToFront(it *Item) error {
 	// Check whether the item is nil
@@ -798,7 +798,7 @@ func(ll *LinkedList) MoveToFront(it *Item) error {
 	// Get key of current node
 	currentKey := sd.key
 	// Check whether the item's internal linkedlist is the same as the linkedlist
-	// at which the item is being moved into. If not, return "Invalid move" error.
+	// at which the item is being moved. If not, return "Invalid move" error.
 	if sd.internal_ll != ll {
 		return fmt.Errorf("Invalid move")
 	}
@@ -850,12 +850,12 @@ func(ll *LinkedList) MoveToFront(it *Item) error {
 		}
 		// Reset next link of previous node. nextKey may be nil, which is ok.
 		prevNode.Next = nextKey
-		// Serialize back the next node
+		// Serialize back the previous node
 		prevNodeBytes, err = proto.Marshal(prevNode)
 		if err != nil {
 			return fmt.Errorf("Could not marshal. %v", err)
 		}
-		// Save changes to prev nodes
+		// Save changes to previous node
 		err = bucket.Put(prevKey, prevNodeBytes)
 		if err != nil {
 			return fmt.Errorf("Could not update previous node's link. %v", err)
@@ -890,6 +890,8 @@ func(ll *LinkedList) MoveToFront(it *Item) error {
 		// Now the node's siblings has been both updated.
 		// Update the next link of the current node to point to the node at the front.
 		currentNode.Next = frontKey
+		// Update the prev link of the current node to nil
+		currentNode.Prev = nil
 		// Serialize back the current node.
 		currentNodeBytes, err = proto.Marshal(currentNode)
 		if err != nil {
@@ -921,7 +923,7 @@ func(ll *LinkedList) MoveToFront(it *Item) error {
 	})
 }
 
-// MoveToBack moves the element pointed to by the given item to the back of the
+// MoveToBack moves the element pointed to by the given Item to the back of the
 // linked list.
 //
 // The element being moved must belong to the linkedlist at which it is being moved.
@@ -929,9 +931,9 @@ func(ll *LinkedList) MoveToFront(it *Item) error {
 //
 // It returns a "Nil item" error in case of a nil Item argument, an "Empty list" error in
 // case of being called on a list with no elements, and an "Invalid item" error in case
-// of passing an item that wasn't returned by one of the defined methods.
+// of passing an Item that wasn't returned by one of the linkedlist methods.
 //
-// Other errors returned may be due to bolt read/write or serialization/deserialization of
+// Other errors returned may be due to Bolt read/write or serialization/deserialization of
 // the data operation fail.
 func(ll *LinkedList) MoveToBack(it *Item) error {
 	// Check whether the item is nil
@@ -945,13 +947,13 @@ func(ll *LinkedList) MoveToBack(it *Item) error {
 	// The item is not a valid linkedlist item
 		return fmt.Errorf("Invalid item")
 	}
-	// Get key of current node
-	currentKey := sd.key
 	// Check whether the item's internal linkedlist is the same as the linkedlist
 	// at which the item is being moved into. If not, return "Invalid move" error.
 	if sd.internal_ll != ll {
 		return fmt.Errorf("Invalid move")
 	}
+	// Get key of current node
+	currentKey := sd.key
 	// Check whether the linkedlist is empty. If so, return an "Empty list" error
 	backKey, backNodeBytes, empty, err := ll.last()
 	if err != nil {
@@ -1040,6 +1042,8 @@ func(ll *LinkedList) MoveToBack(it *Item) error {
 		// Now the node's siblings has been both updated.
 		// Update the prev link of the current node to point to the node at the back.
 		currentNode.Prev = backKey
+		// Update the next link of the current node to point at nil.
+		currentNode.Next = nil
 		// Serialize back the current node.
 		currentNodeBytes, err = proto.Marshal(currentNode)
 		if err != nil {
@@ -1055,9 +1059,9 @@ func(ll *LinkedList) MoveToBack(it *Item) error {
 		if err = proto.Unmarshal(backNodeBytes, backNode); err != nil {
 			return fmt.Errorf("Could not unmarshal. %v", err)
 		}
-		// Update the prev link of the node at the front to point to the node just moved.
+		// Update the next link of the node at the back to point to the node just moved.
 		backNode.Next = currentKey
-		// Serialize back the node at the front
+		// Serialize back the node at the back
 		backNodeBytes, err = proto.Marshal(backNode)
 		if err != nil {
 			return fmt.Errorf("Could not marshal. %v", err)
@@ -1065,8 +1069,234 @@ func(ll *LinkedList) MoveToBack(it *Item) error {
 		// Save changes to the node at the back
 		err = bucket.Put(backKey, backNodeBytes)
 		if err != nil {
-			return fmt.Errorf("Could not update the node at the front. %v", err)
+			return fmt.Errorf("Could not update the node at the back. %v", err)
 		}
 		return nil
+	})
+}
+
+// InsertAfter inserts the given data after the element pointed to by the given mark, so
+// that all the pointers involving the new data and its siblings gets updated.
+//
+// The element at which the given mark points to must belong to the same linkedlist as the
+// linkedlist at which the method is being called. Otherwise, it returns an "Invalid mark: 
+// linkedlists are not equal" error.
+//
+// It returns a "Nil mark" error in case of a nil mark argument, an "Empty list" error in
+// case of being called on a list with no elements, and an "Invalid mark" error in case
+// of passing an Item that wasn't returned by one of the linkedlist methods.
+//
+// Other errors returned may be due to Bolt read/write or serialization/deserialization of
+// the data operations fail.
+func (ll *LinkedList) InsertAfter(data []byte, mark *Item) error {
+	if data == nil {
+		return fmt.Errorf("Empty data")
+	}
+	if mark == nil {
+		return fmt.Errorf("Empty mark")
+	}
+	// Check whether mark is a valid LinkedList Item, i.e. it has not been modified.
+	sd, ok := mark.Data.(*storedData)
+	if !ok {
+		return fmt.Errorf("Invalid mark")
+	}
+	// Check whether the internal_ll of mark is the same as ll
+	if sd.internal_ll != ll {
+		return fmt.Errorf("Invalid mark: linkedlists are not equal")
+	}
+	markKey := sd.key
+	// Check whether the given mark is the node at the back of the linkedlist. If so,
+	// call ll.PushBack and return.
+	backKey, _, empty, err := ll.last()
+	if err != nil {
+		return err
+	}
+	if empty {
+		return fmt.Errorf("Empty list")
+	}
+	if bytes.Equal(backKey, markKey) {
+		// The mark is the back of the linked list. The data will be pushed at the back.
+		return ll.PushBack(data)
+	}
+	// The mark is other than the back of the linked list
+	return (*bbolt.DB)(ll.db).Update(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket(ll.name)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		// Get serialized data of mark
+		markNodeBytes := bucket.Get(markKey)
+		if markNodeBytes == nil {
+			return ErrDoesNotExist
+		}
+		// De-serialize data of mark to access its next/prev links
+		markNode := &pb.LinkedListNode{}
+		if err = proto.Unmarshal(markNodeBytes, markNode); err != nil {
+			return fmt.Errorf("Could not unmarshal. %v", err)
+		}
+		nextKey := markNode.GetNext()
+		// Set new node
+		newNode := &pb.LinkedListNode {
+			Data: data,
+			Next: nextKey,
+			Prev: markKey,
+		}
+		id, _ := bucket.NextSequence()
+		newKey := byteID(id)
+		// Serialize the new node
+		newNodeBytes, err := proto.Marshal(newNode)
+		if err != nil {
+			return fmt.Errorf("Could not marshal. %v", err)
+		}
+		// Insert data into Bolt
+		err = bucket.Put(newKey, newNodeBytes)
+		if err != nil {
+			return fmt.Errorf("Could not save new data. %v", err)
+		}
+		// Update link to next node of the mark to point to the new node
+		markNode.Next = newKey
+		// Serialize back the mark node
+		markNodeBytes, err = proto.Marshal(markNode)
+		if err != nil {
+			return fmt.Errorf("Could not marshal. %v", err)
+		}
+		// Save changes to the mark node
+		err = bucket.Put(markKey, markNodeBytes)
+		if err != nil {
+			return fmt.Errorf("Could not save changes to mark. %v", err)
+		}
+		// Get mark's serialized next node
+		nextNode := &pb.LinkedListNode{}
+		nextNodeBytes := bucket.Get(nextKey)
+		if nextNodeBytes == nil {
+			return ErrDoesNotExist
+		}
+		// De-serialize next node to reset its link to prev node
+		err = proto.Unmarshal(nextNodeBytes, nextNode)
+	 	if err != nil {
+	 		return fmt.Errorf("Could not unmarshal. %v", err)
+	 	}
+	 	// Reset next node's prev link to point to the new node.
+	 	nextNode.Prev = newKey
+	 	// Serialize back next node
+	 	nextNodeBytes, err = proto.Marshal(nextNode)
+	 	if err != nil {
+	 		return fmt.Errorf("Could not marshal. %v", err)
+	 	}
+	 	// Save back next node
+	 	return bucket.Put(nextKey, nextNodeBytes)
+	})
+}
+
+// InsertBefore inserts the given data after the element pointed to by the given mark, so
+// that all the pointers involving the new data and its siblings gets updated.
+//
+// The element at which the given mark points to must belong to the same linkedlist as the
+// linkedlist at which the method is being called. Otherwise, it returns an "Invalid mark: 
+// linkedlists are not equal" error.
+//
+// It returns a "Nil mark" error in case of a nil mark argument, an "Empty list" error in
+// case of being called on a list with no elements, and an "Invalid mark" error in case
+// of passing an Item that wasn't returned by one of the linkedlist methods.
+//
+// Other errors returned may be due to Bolt read/write or serialization/deserialization of
+// the data operations fail.
+func (ll *LinkedList) InsertBefore(data []byte, mark *Item) error {
+	if data == nil {
+		return fmt.Errorf("Empty data")
+	}
+	if mark == nil {
+		return fmt.Errorf("Empty mark")
+	}
+	// Check whether mark is a valid LinkedList Item, i.e. it has not been modified.
+	sd, ok := mark.Data.(*storedData)
+	if !ok {
+		return fmt.Errorf("Invalid mark")
+	}
+	// Check whether the internal_ll of mark is the same as ll
+	if sd.internal_ll != ll {
+		return fmt.Errorf("Invalid mark: linkedlists are not equal")
+	}
+	markKey := sd.key
+	// Check whether the given mark is the node at the front of the linkedlist. If so,
+	// call ll.PushFront and return.
+	frontKey, _, empty, err := ll.first()
+	if err != nil {
+		return err
+	}
+	if empty {
+		return fmt.Errorf("Empty list")
+	}
+	if bytes.Equal(frontKey, markKey) {
+		// The mark is the front of the linked list. The data will be pushed at the front.
+		return ll.PushFront(data)
+	}
+	// The mark is other than the front of the linked list
+	return (*bbolt.DB)(ll.db).Update(func(tx *bbolt.Tx) error {
+		bucket := tx.Bucket(ll.name)
+		if bucket == nil {
+			return ErrBucketNotFound
+		}
+		// Get serialized data of mark
+		markNodeBytes := bucket.Get(markKey)
+		if markNodeBytes == nil {
+			return ErrDoesNotExist
+		}
+		// De-serialize data of mark to access its next/prev links
+		markNode := &pb.LinkedListNode{}
+		if err = proto.Unmarshal(markNodeBytes, markNode); err != nil {
+			return fmt.Errorf("Could not unmarshal. %v", err)
+		}
+		prevKey := markNode.GetPrev()
+		// Set new node
+		newNode := &pb.LinkedListNode {
+			Data: data,
+			Next: markKey,
+			Prev: prevKey,
+		}
+		id, _ := bucket.NextSequence()
+		newKey := byteID(id)
+		// Serialize the new node
+		newNodeBytes, err := proto.Marshal(newNode)
+		if err != nil {
+			return fmt.Errorf("Could not marshal. %v", err)
+		}
+		// Insert data into Bolt
+		err = bucket.Put(newKey, newNodeBytes)
+		if err != nil {
+			return fmt.Errorf("Could not save new data. %v", err)
+		}
+		// Update link to prev node of the mark to point to the new node
+		markNode.Prev = newKey
+		// Serialize back the mark node
+		markNodeBytes, err = proto.Marshal(markNode)
+		if err != nil {
+			return fmt.Errorf("Could not marshal. %v", err)
+		}
+		// Save changes to the mark node
+		err = bucket.Put(markKey, markNodeBytes)
+		if err != nil {
+			return fmt.Errorf("Could not save changes to mark. %v", err)
+		}
+		// Get mark's serialized prev node
+		prevNodeBytes := bucket.Get(prevKey)
+		if prevNodeBytes == nil {
+			return ErrDoesNotExist
+		}
+		// De-serialize prev node to reset its link to the next node
+		prevNode := &pb.LinkedListNode{}
+		err = proto.Unmarshal(prevNodeBytes, prevNode)
+	 	if err != nil {
+	 		return fmt.Errorf("Could not unmarshal. %v", err)
+	 	}
+	 	// Reset prev node's next link to point to the new node.
+	 	prevNode.Next = newKey
+	 	// Serialize back prev node
+	 	prevNodeBytes, err = proto.Marshal(prevNode)
+	 	if err != nil {
+	 		return fmt.Errorf("Could not marshal. %v", err)
+	 	}
+	 	// Save back prev node
+	 	return bucket.Put(prevKey, prevNodeBytes)
 	})
 }
