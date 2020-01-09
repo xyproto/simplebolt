@@ -1,4 +1,4 @@
-package simplebolt
+package linkedlist
 
 // linkedlist.go provides a simple way to use the Bolt database and store data in a
 // doubly linked list-like data structure manner, but keeping bolt's binary tree as
@@ -6,16 +6,24 @@ package simplebolt
 
 import (
 	"errors"
+	"encoding/binary"
 	"bytes"
 	"fmt"
 	"log"
 
 	"github.com/etcd-io/bbolt"
 	"github.com/golang/protobuf/proto"
-	pb "github.com/xyproto/simplebolt/ll_nodes_pb"
+	"github.com/xyproto/simplebolt"
+	pb "github.com/xyproto/simplebolt/linkedlist/nodes_pb"
 )
 
 type (
+	// Used for each of the datatypes
+	boltBucket struct {
+		db   *simplebolt.Database // the Bolt database
+		name []byte    // the bucket name
+	}
+
 	// LinkedList is a doubly linked list. It is persisted using etcd-io/bbolt's b+tree
 	// as its underlying data structure but with a doubly linked list-like behaviour
 	LinkedList boltBucket
@@ -42,12 +50,36 @@ type (
 	// by calling Prev(), Next() and any of the Getter methods. To retrieve, change or
 	// delete the underlying data, the Data field has the corresponding methods.
 	Item struct {
-		Data StoredData
+		Data simplebolt.StoredData
 	}
 )
 
+var (
+	// ErrBucketNotFound may be returned if a no Bolt bucket was found
+	ErrBucketNotFound = errors.New("Bucket not found")
+
+	// ErrKeyNotFound will be returned if the key was not found in a HashMap or KeyValue struct
+	ErrKeyNotFound = errors.New("Key not found")
+
+	// ErrDoesNotExist will be returned if an element was not found. Used in List, Set, HashMap and KeyValue.
+	ErrDoesNotExist = errors.New("Does not exist")
+
+	// ErrExistsInSet is only returned if an element is added to a Set, but it already exists
+	ErrExistsInSet = errors.New("Element already exists in set")
+
+	// ErrInvalidID is only returned if adding an element to a HashMap that contains a colon (:)
+	ErrInvalidID = errors.New("Element ID can not contain \":\"")
+
+	// ErrFoundIt is only used internally, for breaking out of Bolt DB style for-loops
+	ErrFoundIt = errors.New("Found it")
+
+	// errReachedEnd is used internally by traversing methods to indicate that the
+	// end of the data structure has been reached.
+	errReachedEnd = errors.New("Reached end of data structure")
+)
+
 // New returns a new doubly linkedlist with the given id as its identifier
-func NewLinkedList(db *Database, id string) (*LinkedList, error) {
+func New(db *simplebolt.Database, id string) (*LinkedList, error) {
 	name := []byte(id)
 	if err := (*bbolt.DB)(db).Update(func(tx *bbolt.Tx) error {
 		if _, err := tx.CreateBucketIfNotExists(name); err != nil {
@@ -1299,4 +1331,11 @@ func (ll *LinkedList) InsertBefore(data []byte, mark *Item) error {
 	 	// Save back prev node
 	 	return bucket.Put(prevKey, prevNodeBytes)
 	})
+}
+
+// Create a byte slice from an uint64
+func byteID(x uint64) []byte {
+	b := make([]byte, 8)
+	binary.BigEndian.PutUint64(b, x)
+	return b
 }

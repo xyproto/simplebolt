@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package nodes;
 
-option go_package = "ll_nodes_pb";
+option go_package = "nodes_pb";
 
 message LinkedListNode {
   bytes data = 1;
