@@ -1,7 +1,7 @@
+package simplebolt
+
 // data.go defines the common set of methods among containers
 // to get and set the values of their underlying data.
-
-package simplebolt
 
 // StoredData is the set of methods that provides access to the
 // element's underlying data in every data structure.
