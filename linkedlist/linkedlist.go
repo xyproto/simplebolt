@@ -115,6 +115,7 @@ func (ll *LinkedList) PushBack(data []byte) error {
 		)
 		// Get the id of the new node
 		id, _ = bucket.NextSequence()
+		newNodeID := byteID(id)
 
 		newNode := &pb.LinkedListNode{
 			Data: data,
@@ -122,8 +123,9 @@ func (ll *LinkedList) PushBack(data []byte) error {
 			Prev: nil,
 		}
 
-		// Get the key/node bytes pair of the node at the back
-		backKey, nodeBytes := bucket.Cursor().Last()
+		// Get the key of the node at the back
+		backKey := bucket.Get([]byte("BACK"))
+
 
 		// Checks whether there are not other nodes in the list
 		if backKey == nil {
@@ -133,9 +135,24 @@ func (ll *LinkedList) PushBack(data []byte) error {
 				return fmt.Errorf("Could not marshal. %v", err)
 			}
 			// Save the first node
-			return bucket.Put(byteID(id), nodeBytes)
+			if err = bucket.Put(newNodeID, nodeBytes); err != nil {
+				return fmt.Errorf("Could not save the first node. %v", err)
+			}
+			// Set the front of the list
+			if err = bucket.Put([]byte("FRONT"), newNodeID); err != nil {
+				return fmt.Errorf("Could not set front of the linked list. %v", err)
+			}
+			// Set the back of the list
+			if err = bucket.Put([]byte("BACK"), newNodeID); err != nil {
+				return fmt.Errorf("Could not set back of the linked list. %v", err)
+			}
+			return nil
 		}
-		// This is *not* the first node.
+		// This is *not* the first node. Get the node at the back of the linked list.
+		nodeBytes = bucket.Get(backKey)
+		if nodeBytes == nil {
+			return ErrDoesNotExist
+		}
 		// Update the last node to link to the ID of this new node
 		// and this node to link to the ID of the last one.
 
@@ -145,7 +162,7 @@ func (ll *LinkedList) PushBack(data []byte) error {
 			return fmt.Errorf("Could not unmarshal. %v", err)
 		}
 		// Set the next link of the last node to the ID of the new node
-		lastNode.Next = byteID(id)
+		lastNode.Next = newNodeID
 		// Serialize back the last node
 		if nodeBytes, err = proto.Marshal(lastNode); err != nil {
 			return fmt.Errorf("Could not marshal. %v", err)
@@ -160,8 +177,12 @@ func (ll *LinkedList) PushBack(data []byte) error {
 		if nodeBytes, err = proto.Marshal(newNode); err != nil {
 			return fmt.Errorf("Could not marshal. %v", err)
 		}
-		// Save the new node and return the error
-		return bucket.Put(byteID(id), nodeBytes)
+		// Save the new node
+		if err = bucket.Put(newNodeID, nodeBytes); err != nil {
+			return fmt.Errorf("Could not save the new node. %v", err)
+		}
+		// Reset the back node key
+		return bucket.Put([]byte("BACK"), newNodeID)
 	})
 }
 
@@ -187,6 +208,7 @@ func (ll *LinkedList) PushFront(data []byte) error {
 		)
 		// Get the id of the new node
 		id, _ = bucket.NextSequence()
+		newNodeID := byteID(id)
 
 		newNode := &pb.LinkedListNode{
 			Data: data,
@@ -194,8 +216,9 @@ func (ll *LinkedList) PushFront(data []byte) error {
 			Prev: nil,
 		}
 
-		// Get the key/node bytes pair of the node at the front
-		frontKey, nodeBytes := bucket.Cursor().First()
+		// Get the key of the node at the front
+		frontKey := bucket.Get([]byte("FRONT"))
+
 		// Checks whether there are not other nodes in the list
 		if frontKey == nil {
 			// This is the first node, no need to link this node to other ones.
@@ -204,10 +227,25 @@ func (ll *LinkedList) PushFront(data []byte) error {
 				return fmt.Errorf("Could not marshal. %v", err)
 			}
 			// Save the first node
-			return bucket.Put(byteID(id), nodeBytes)
+			if err = bucket.Put(newNodeID, nodeBytes); err != nil {
+				return fmt.Errorf("Could not save the first node. %v", err)
+			}
+			// Set the front of the list
+			if err = bucket.Put([]byte("FRONT"), newNodeID); err != nil {
+				return fmt.Errorf("Could not set front of the linked list. %v", err)
+			}
+			// Set the back of the list
+			if err = bucket.Put([]byte("BACK"), newNodeID); err != nil {
+				return fmt.Errorf("Could not set back of the linked list. %v", err)
+			}
 		}
-		// This is *not* the first node. Update this node to link to the ID
-		// of the first node and the first node to link to the ID of this node.
+		// This is *not* the first node. Get the node at the back of the linked list.
+		nodeBytes = bucket.Get(frontKey)
+		if nodeBytes == nil {
+			return ErrDoesNotExist
+		}
+		// Update this node to link to the ID of the first node and the first node to
+		// link to the ID of this node.
 
 		// De-serialize the first node to access the prev link
 		firstNode := &pb.LinkedListNode{}
@@ -215,7 +253,7 @@ func (ll *LinkedList) PushFront(data []byte) error {
 			return fmt.Errorf("Could not unmarshal. %v", err)
 		}
 		// Set the prev link of the first node to the ID of the new node
-		firstNode.Prev = byteID(id)
+		firstNode.Prev = newNodeID
 
 		// Serialize back the first node
 		if nodeBytes, err = proto.Marshal(firstNode); err != nil {
@@ -227,12 +265,17 @@ func (ll *LinkedList) PushFront(data []byte) error {
 		}
 		// Link the new node to the first node
 		newNode.Next = frontKey
+
 		// Serialize the new node
 		if nodeBytes, err = proto.Marshal(newNode); err != nil {
 			return fmt.Errorf("Could not marshal. %v", err)
 		}
 		// Save the new node
-		return bucket.Put(byteID(id), nodeBytes)
+		if err = bucket.Put(newNodeID, nodeBytes); err != nil {
+			return fmt.Errorf("Could not save the new node. %v", err)
+		}
+		// Reset the front node key
+		return bucket.Put([]byte("FRONT"), newNodeID)
 	})
 }
 
@@ -309,11 +352,12 @@ func (ll *LinkedList) first() (key, val []byte, empty bool, err error) {
 		if bucket = tx.Bucket(ll.name); bucket == nil {
 			return ErrBucketNotFound
 		}
-		key, val = bucket.Cursor().First()
+		key = bucket.Get([]byte("FRONT"))
 		if key == nil {
 			empty = true
 		} else {
 			empty = false
+			val = bucket.Get(key)
 		}
 		return nil
 	})
@@ -327,11 +371,12 @@ func (ll *LinkedList) last() (key, val []byte, empty bool, err error) {
 		if bucket = tx.Bucket(ll.name); bucket == nil {
 			return ErrBucketNotFound
 		}
-		key, val = bucket.Cursor().Last()
+		key = bucket.Get([]byte("BACK"))
 		if key == nil {
 			empty = true
 		} else {
 			empty = false
+			val = bucket.Get(key)
 		}
 		return nil
 	})
@@ -544,16 +589,22 @@ func(ll *LinkedList) GetNextFunc(val interface{}, mark *Item, equal func(a inter
 //
 // Note that it panics if the item is an invalid linked list item, i.e. its Data field
 // has been modified or not returned by one of the linked list methods.
-func (i *Item) Next() *Item {
+func (i *Item) Next() (next *Item) {
 	// Type assert the StoredData interface to a *storedData type
-	currentKey := i.Data.(*storedData).key
+	sd, ok := i.Data.(*storedData)
+	if !ok {
+		// Returns nil in case of an invalid linked list item.
+		return
+	}
 	// Check whether the item refers to an actual item
 	// Returns nil if not.
+	currentKey := sd.key
 	if currentKey == nil {
-		return nil
+		return
 	}
-	listName := i.Data.(*storedData).internal_ll.name
-	db := (*bbolt.DB)(i.Data.(*storedData).internal_ll.db)
+	ll := sd.internal_ll
+	listName := ll.name
+	db := (*bbolt.DB)(ll.db)
 	err := db.View(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket(listName)
 		if bucket == nil {
@@ -570,31 +621,35 @@ func (i *Item) Next() *Item {
 		}
 		// Get next key
 		nextKey := currentNode.GetNext()
+		if nextKey == nil {
+			return errReachedEnd
+		}
 		// Get next node
 		val = bucket.Get(nextKey)
 		if val == nil {
-			return errReachedEnd
+			return ErrDoesNotExist
 		}
 		// Get next node
 		nextNode := &pb.LinkedListNode{}
 		if err := proto.Unmarshal(val, nextNode); err != nil {
 			return fmt.Errorf("Could not unmarshal. %v", err)
 		}
-		// reset current item fields with next node's data
-		i.Data.(*storedData).key = nextKey
-		i.Data.(*storedData).value = nextNode.GetData()
-		// keep the same internal_ll
+		// Set the item with next node's data
+		next = &Item{
+			Data: &storedData{
+				key: nextKey,
+				value: nextNode.GetData(),
+				internal_ll: ll,
+			},
+		}
 		return nil
 	})
 	if err != nil {
-		if err == errReachedEnd {
-			return nil
-		} else {
+		if err != errReachedEnd {
 			log.Fatalf("Could not get next: %v\n", err)
-			return nil
 		}
 	}
-	return i
+	return
 }
 
 // Prev returns the previous item pointed to by the current linked list item.
@@ -603,16 +658,22 @@ func (i *Item) Next() *Item {
 //
 // Note that it panics if the item is an invalid linked list item, i.e. its Data field
 // has been modified or not returned by one of the linked list methods.
-func (i *Item) Prev() *Item {
-	currentKey := i.Data.(*storedData).key
+func (i *Item) Prev() (prev *Item) {
+	// Type assert the item to a *storedData type and check whether the LinkedList Item
+	// refers to a valid linkedlist item. Returns nil if not.
+	sd, ok := i.Data.(*storedData)
+	if !ok {
+		return
+	}
+	currentKey := sd.key
 	// Check whether the LinkedListItem refers to an actual item.
 	// Returns nil if not.
 	if currentKey == nil {
-		return nil
+		return
 	}
-	// Type assert the StoredData interface to a *storedData type
-	listName := i.Data.(*storedData).internal_ll.name
-	db := (*bbolt.DB)(i.Data.(*storedData).internal_ll.db)
+	ll := sd.internal_ll
+	listName := ll.name
+	db := (*bbolt.DB)(ll.db)
 	err := db.View(func(tx *bbolt.Tx) error {
 		bucket := tx.Bucket(listName)
 		if bucket == nil {
@@ -629,31 +690,35 @@ func (i *Item) Prev() *Item {
 		}
 		// Get prev key
 		prevKey := currentNode.GetPrev()
+		if prevKey == nil {
+			return errReachedEnd
+		}
 		// Get prev node
 		val = bucket.Get(prevKey)
 		if val == nil {
-			return errReachedEnd
+			return ErrDoesNotExist
 		}
 		// Get prev node
 		prevNode := &pb.LinkedListNode{}
 		if err := proto.Unmarshal(val, prevNode); err != nil {
 			return fmt.Errorf("Could not unmarshal. %v", err)
 		}
-		// reset current item fields with prev node's data
-		i.Data.(*storedData).key = prevKey
-		i.Data.(*storedData).value = prevNode.GetData()
-		// keep the same internal_ll
+		// Set the item with prev node's data
+		prev = &Item{
+			Data: &storedData {
+				key: prevKey,
+				value: prevNode.GetData(),
+				internal_ll: ll,
+			},
+		}
 		return nil
 	})
 	if err != nil {
-		if err == errReachedEnd {
-			return nil
-		} else {
+		if err != errReachedEnd {
 			log.Fatalf("Could not get prev: %v\n", err)
-			return nil
 		}
 	}
-	return i
+	return
 }
 
 // Value returns the current value of the element at which the item refers to.
@@ -711,17 +776,23 @@ func (sd *storedData) Update(newData []byte) error {
 // It may return an error in case of bbolt Update or protocol buffer
 // serialization/deserialization fail. In both cases, the data isn't removed.
 func (sd *storedData) Remove() error {
+	if sd.internal_ll == nil {
+		return fmt.Errorf("Invalid item")
+	}
 	listName := sd.internal_ll.name
 	db := (*bbolt.DB)(sd.internal_ll.db)
 
 	return db.Update(func(tx *bbolt.Tx) error {
+		// Get key of current item
+		currentKey := sd.key
+
 		bucket := tx.Bucket(listName)
 		if bucket == nil {
 			return ErrBucketNotFound
 		}
 
 		// Get serialized current node
-		currentNodeBytes := bucket.Get(sd.key)
+		currentNodeBytes := bucket.Get(currentKey)
 		if currentNodeBytes == nil {
 			return ErrDoesNotExist
 		}
@@ -736,7 +807,8 @@ func (sd *storedData) Remove() error {
 		prevKey := currentNode.GetPrev()
 		nextKey := currentNode.GetNext()
 
-		// Checks whether the current node is linked to a previous node.
+		// Checks whether the current node is linked to a previous node, i.e. the current
+		// node is not at the front of the linked list.
 		if prevKey != nil {
 			// Get serialized previous node
 			prevNodeBytes := bucket.Get(prevKey)
@@ -760,6 +832,12 @@ func (sd *storedData) Remove() error {
 			err = bucket.Put(prevKey, prevNodeBytes)
 			if err != nil {
 				return fmt.Errorf("Could not update previous node's link. %v", err)
+			}
+		} else {
+			// The node being removed is the at front of the linked list.
+			// The next node must be updated to become the front of the linked list.
+			if err = bucket.Put([]byte("FRONT"), nextKey); err != nil {
+				return fmt.Errorf("Could not reset front. %v", err)
 			}
 		}
 
@@ -788,16 +866,23 @@ func (sd *storedData) Remove() error {
 			if err != nil {
 				return fmt.Errorf("Could not update next node's link. %v", err)
 			}
+		} else {
+			// The node being removed is the at back of the linked list.
+			// The next node must be updated to become the back of the linked list.
+			if err = bucket.Put([]byte("BACK"), prevKey); err != nil {
+				return fmt.Errorf("Could not reset back. %v", err)
+			}
 		}
 
 		// Remove this node from Bolt
-		if err = bucket.Delete(sd.key); err != nil {
+		if err = bucket.Delete(currentKey); err != nil {
 			return fmt.Errorf("Could not delete key. %v", err)
 		}
 
 		// Let the Go Garbage Collector do its job.
 		sd.key = nil
 		sd.value = nil
+		sd.internal_ll = nil
 		sd = nil
 		return nil
 	})
@@ -869,11 +954,33 @@ func(ll *LinkedList) MoveToFront(it *Item) error {
 		// nextKey may be nil, which is ok.
 		nextKey := currentNode.GetNext()
 
+		// De-serialize the node at the front to access its prev node link.
+		frontNode := &pb.LinkedListNode{}
+		if err = proto.Unmarshal(frontNodeBytes, frontNode); err != nil {
+			return fmt.Errorf("Could not unmarshal. %v", err)
+		}
+		// Update the prev link of the node at the front to point to the node to be moved.
+		frontNode.Prev = currentKey
+		// Serialize back the node at the front
+		frontNodeBytes, err = proto.Marshal(frontNode)
+		if err != nil {
+			return fmt.Errorf("Could not marshal. %v", err)
+		}
+		// Save changes to the node at the front
+		if err = bucket.Put(frontKey, frontNodeBytes); err != nil {
+			return fmt.Errorf("Could not update the node at the front. %v", err)
+		}
+		// Update key of node at the front
+		if err = bucket.Put([]byte("FRONT"), currentKey); err != nil {
+			return fmt.Errorf("Could not update key of node at the front. %v", err)
+		}
+
 		// Get serialized previous node
 		prevNodeBytes := bucket.Get(prevKey)
 		if prevNodeBytes == nil {
 			return ErrDoesNotExist
 		}
+
 		// De-serialize the previous node to reset its next link
 		prevNode := &pb.LinkedListNode{}
 		err = proto.Unmarshal(prevNodeBytes, prevNode)
@@ -934,23 +1041,6 @@ func(ll *LinkedList) MoveToFront(it *Item) error {
 		if err != nil {
 			return fmt.Errorf("Could not update current node's link. %v", err)
 		}
-		// De-serialize the node at the front to access its prev node link.
-		frontNode := &pb.LinkedListNode{}
-		if err = proto.Unmarshal(frontNodeBytes, frontNode); err != nil {
-			return fmt.Errorf("Could not unmarshal. %v", err)
-		}
-		// Update the prev link of the node at the front to point to the node just moved.
-		frontNode.Prev = currentKey
-		// Serialize back the node at the front
-		frontNodeBytes, err = proto.Marshal(frontNode)
-		if err != nil {
-			return fmt.Errorf("Could not marshal. %v", err)
-		}
-		// Save changes to the node at the front
-		err = bucket.Put(frontKey, frontNodeBytes)
-		if err != nil {
-			return fmt.Errorf("Could not update the node at the front. %v", err)
-		}
 		return nil
 	})
 }
@@ -1010,11 +1100,35 @@ func(ll *LinkedList) MoveToBack(it *Item) error {
 		if currentNodeBytes == nil {
 			return ErrDoesNotExist
 		}
+
+		// De-serialize the node at the back to access its next node link.
+		backNode := &pb.LinkedListNode{}
+		if err = proto.Unmarshal(backNodeBytes, backNode); err != nil {
+			return fmt.Errorf("Could not unmarshal. %v", err)
+		}
+		// Update the next link of the node at the back to point to the node to be moved.
+		backNode.Next = currentKey
+		// Serialize back the node at the back
+		backNodeBytes, err = proto.Marshal(backNode)
+		if err != nil {
+			return fmt.Errorf("Could not marshal. %v", err)
+		}
+		// Save changes to the node at the back
+		err = bucket.Put(backKey, backNodeBytes)
+		if err != nil {
+			return fmt.Errorf("Could not update the node at the back. %v", err)
+		}
+		// Update key of node at the back
+		if err = bucket.Put([]byte("BACK"), currentKey); err != nil {
+			return fmt.Errorf("Could not update key of node at the back. %v", err)
+		}
+
 		// De-serialize current node to access its data
 		currentNode := &pb.LinkedListNode{}
 		if err = proto.Unmarshal(currentNodeBytes, currentNode); err != nil {
 			return fmt.Errorf("Could not unmarshal. %v", err)
 		}
+
 		// Get link of prev/next nodes. Next should exist, since it's been checked
 		// that the item's node is not at the back of the linkedlist.
 		nextKey := currentNode.GetNext()
@@ -1085,23 +1199,6 @@ func(ll *LinkedList) MoveToBack(it *Item) error {
 		err = bucket.Put(currentKey, currentNodeBytes)
 		if err != nil {
 			return fmt.Errorf("Could not update current node's link. %v", err)
-		}
-		// De-serialize the node at the back to access its next node link.
-		backNode := &pb.LinkedListNode{}
-		if err = proto.Unmarshal(backNodeBytes, backNode); err != nil {
-			return fmt.Errorf("Could not unmarshal. %v", err)
-		}
-		// Update the next link of the node at the back to point to the node just moved.
-		backNode.Next = currentKey
-		// Serialize back the node at the back
-		backNodeBytes, err = proto.Marshal(backNode)
-		if err != nil {
-			return fmt.Errorf("Could not marshal. %v", err)
-		}
-		// Save changes to the node at the back
-		err = bucket.Put(backKey, backNodeBytes)
-		if err != nil {
-			return fmt.Errorf("Could not update the node at the back. %v", err)
 		}
 		return nil
 	})
@@ -1198,17 +1295,17 @@ func (ll *LinkedList) InsertAfter(data []byte, mark *Item) error {
 			return fmt.Errorf("Could not save changes to mark. %v", err)
 		}
 		// Get mark's serialized next node
-		nextNode := &pb.LinkedListNode{}
 		nextNodeBytes := bucket.Get(nextKey)
 		if nextNodeBytes == nil {
 			return ErrDoesNotExist
 		}
-		// De-serialize next node to reset its link to prev node
+		// De-serialize next node to access its link to prev node
+		nextNode := &pb.LinkedListNode{}
 		err = proto.Unmarshal(nextNodeBytes, nextNode)
 	 	if err != nil {
 	 		return fmt.Errorf("Could not unmarshal. %v", err)
 	 	}
-	 	// Reset next node's prev link to point to the new node.
+	 	// Reset next node's prev link to point to the new node
 	 	nextNode.Prev = newKey
 	 	// Serialize back next node
 	 	nextNodeBytes, err = proto.Marshal(nextNode)
