@@ -82,6 +82,11 @@ func (db *Database) Close() {
 	(*bbolt.DB)(db).Close()
 }
 
+// Get path
+func (db *Database) Path() string{
+	return (*bbolt.DB)(db).Path()
+}
+
 // Ping the database (only for fulfilling the pinterface.IHost interface)
 func (db *Database) Ping() error {
 	// Always O.K.
