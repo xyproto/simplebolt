@@ -57,8 +57,8 @@ var (
 	// ErrInvalidID is only returned if adding an element to a HashMap that contains a colon (:)
 	ErrInvalidID = errors.New("Element ID can not contain \":\"")
 
-	// ErrFoundIt is only used internally, for breaking out of Bolt DB style for-loops
-	ErrFoundIt = errors.New("Found it")
+	// errFoundIt is only used internally, for breaking out of Bolt DB style for-loops
+	errFoundIt = errors.New("Found it")
 )
 
 /* --- Database functions --- */
@@ -274,7 +274,7 @@ func (s *Set) Has(value string) (bool, error) {
 		bucket.ForEach(func(_, byteValue []byte) error {
 			if value == string(byteValue) {
 				exists = true
-				return ErrFoundIt // break the ForEach by returning an error
+				return errFoundIt // break the ForEach by returning an error
 			}
 			return nil // Continue ForEach
 		})
@@ -316,7 +316,7 @@ func (s *Set) Del(value string) error {
 		bucket.ForEach(func(byteKey, byteValue []byte) error {
 			if value == string(byteValue) {
 				foundKey = byteKey
-				return ErrFoundIt // break the ForEach by returning an error
+				return errFoundIt // break the ForEach by returning an error
 			}
 			return nil // Continue ForEach
 		})
@@ -495,7 +495,7 @@ func (h *HashMap) Exists(elementid string) (bool, error) {
 				fields := strings.SplitN(combinedKey, ":", 2)
 				if fields[0] == elementid {
 					found = true
-					return ErrFoundIt
+					return errFoundIt
 				}
 			}
 			return nil // Continue ForEach
