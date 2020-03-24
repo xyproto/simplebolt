@@ -535,7 +535,7 @@ func (ll *LinkedList) GetNext(val []byte, mark *Item) (*Item, error) {
 // If GetNextFunc can't find any matches, it returns an nil item and a nil error.
 //
 // It returns either an "Empty val" error when called with a nil []byte val, an
-// "Empty mark" error when called with a nil beggining mark, an "Invalid mark" error when
+// "Empty mark" error when called with a nil beginning mark, an "Invalid mark" error when
 // the passed item is not a linked list item or belongs to another linked list, or an
 // "Empty comparing  function" error when called with a nil function to compare.
 //
