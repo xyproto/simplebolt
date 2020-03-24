@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"io/ioutil"
+	"log"
 	"os"
 
 	"github.com/golang/protobuf/proto"
 	"github.com/xyproto/simplebolt"
-	"github.com/xyproto/simplebolt/linkedlist"
 	pb "github.com/xyproto/simplebolt/example/linkedlist/currencypb"
+	"github.com/xyproto/simplebolt/linkedlist"
 )
 
 type cryptoCurrency struct {
@@ -36,19 +36,19 @@ func (data cryptoCurrency) GetName() string {
 }
 
 var cryptoCurrencies = []*cryptoCurrency{
-	&cryptoCurrency{
+	{
 		cc: &pb.Currency{
 			Name:             "BTC",
 			HighestPriceDate: "December 17, 2017",
 			HighestPrice:     "19,891.0 USD",
 		},
-	}, &cryptoCurrency{
+	}, {
 		cc: &pb.Currency{
 			Name:             "ETH",
 			HighestPriceDate: "January 13, 2018",
 			HighestPrice:     "1,448.18 USD",
 		},
-	}, &cryptoCurrency{
+	}, {
 		cc: &pb.Currency{
 			Name:             "XRP",
 			HighestPriceDate: "January 07, 2018",
@@ -91,7 +91,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Could not get last item. %v\n", err)
 	}
-	ltc := &cryptoCurrency {
+	ltc := &cryptoCurrency{
 		cc: &pb.Currency{
 			Name:             "LTC",
 			HighestPriceDate: "December 18, 2017",
@@ -129,29 +129,29 @@ func main() {
 }
 
 func setUp() (*linkedlist.LinkedList, *simplebolt.Database) {
-    // Retrieve a temporary path.
-    f, err := ioutil.TempFile("", "")
-    if err != nil {
-        log.Fatalf("Could not create temp file. %v", err)
-    }
-    path := f.Name()
-    f.Close()
-    os.Remove(path)
-    // Open the database.
-    db, err := simplebolt.New(path)
-    if err != nil {
-        log.Fatalf("Could not open new database. %v", err)
-    }
-    ll, err := linkedlist.New(db, "Currencies")
-    if err != nil {
-        log.Fatalf("Could not create new list. %v", err)
-    }
-    return ll, db
+	// Retrieve a temporary path.
+	f, err := ioutil.TempFile("", "")
+	if err != nil {
+		log.Fatalf("Could not create temp file. %v", err)
+	}
+	path := f.Name()
+	f.Close()
+	os.Remove(path)
+	// Open the database.
+	db, err := simplebolt.New(path)
+	if err != nil {
+		log.Fatalf("Could not open new database. %v", err)
+	}
+	ll, err := linkedlist.New(db, "Currencies")
+	if err != nil {
+		log.Fatalf("Could not create new list. %v", err)
+	}
+	return ll, db
 }
 
 func tearDown(db *simplebolt.Database) {
-    defer os.Remove(db.Path())
-    db.Close()
+	defer os.Remove(db.Path())
+	db.Close()
 }
 
 func list(ll *linkedlist.LinkedList) {
