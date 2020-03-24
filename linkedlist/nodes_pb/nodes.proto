@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package nodes;
+
+option go_package = "nodes_pb";
+
+message LinkedListNode {
+  bytes data = 1;
+  bytes next = 2;
+  bytes prev = 3;
+}

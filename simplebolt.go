@@ -59,6 +59,10 @@ var (
 
 	// errFoundIt is only used internally, for breaking out of Bolt DB style for-loops
 	errFoundIt = errors.New("Found it")
+
+	// errReachedEnd is used internally by traversing methods to indicate that the
+	// end of the data structure has been reached.
+	errReachedEnd = errors.New("Reached end of data structure")
 )
 
 /* --- Database functions --- */
@@ -76,6 +80,11 @@ func New(filename string) (*Database, error) {
 // Close the database
 func (db *Database) Close() {
 	(*bbolt.DB)(db).Close()
+}
+
+// Path returns the full path to the database file
+func (db *Database) Path() string {
+	return (*bbolt.DB)(db).Path()
 }
 
 // Ping the database (only for fulfilling the pinterface.IHost interface)

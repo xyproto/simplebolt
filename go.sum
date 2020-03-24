@@ -1,3 +1,5 @@
+github.com/golang/protobuf v1.3.5 h1:F768QJ1E9tib+q5Sc8MkdJi1RxLTbRcTf8LJV56aRls=
+github.com/golang/protobuf v1.3.5/go.mod h1:6O5/vntMXwX2lRkT1hjjk0nAC1IDOTvTlVgjlRvqsdk=
 github.com/xyproto/pinterface v0.0.0-20200201214933-70763765f31f h1:x97Isxzsv8Aj1QMh8vNxKzI85Fvgg2areAJlIaMQ4zY=
 github.com/xyproto/pinterface v0.0.0-20200201214933-70763765f31f/go.mod h1:X5B5pKE49ak7SpyDh5QvJvLH9cC9XuZNDcl5hEyYc34=
 go.etcd.io/bbolt v1.3.4 h1:hi1bXHMVrlQh6WwxAy+qZCV/SYIlqo+Ushwdpa4tAKg=
