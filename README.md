@@ -1,12 +1,6 @@
-# Simple Bolt
-
-![Build](https://github.com/xyproto/simplebolt/workflows/Build/badge.svg) [![GoDoc](https://godoc.org/github.com/xyproto/simplebolt?status.svg)](http://godoc.org/github.com/xyproto/simplebolt) [![Go Report Card](https://goreportcard.com/badge/github.com/xyproto/simplebolt)](https://goreportcard.com/report/github.com/xyproto/simplebolt) [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat)](https://raw.githubusercontent.com/xyproto/simplebolt/main/LICENSE)
+# Simple Bolt ![Build](https://github.com/xyproto/simplebolt/workflows/Build/badge.svg) [![GoDoc](https://godoc.org/github.com/xyproto/simplebolt?status.svg)](http://godoc.org/github.com/xyproto/simplebolt) [![Go Report Card](https://goreportcard.com/badge/github.com/xyproto/simplebolt)](https://goreportcard.com/report/github.com/xyproto/simplebolt) [![License](https://img.shields.io/badge/license-MIT-green.svg?style=flat)](https://raw.githubusercontent.com/xyproto/simplebolt/main/LICENSE)
 
 Simple way to use the [Bolt](https://github.com/coreos/bbolt) database. Similar design to [simpleredis](https://github.com/xyproto/simpleredis).
-
-## Online API Documentation
-
-[godoc.org](http://godoc.org/github.com/xyproto/simplebolt)
 
 ## Features and limitations
 
