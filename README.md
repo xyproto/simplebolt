@@ -60,5 +60,5 @@ func main() {
 ## Version, license and author
 
 * License: BSD-3
-* Version: 1.5.3
+* Version: 1.5.4
 * Author: Alexander F. Rødseth &lt;xyproto@archlinux.org&gt;
