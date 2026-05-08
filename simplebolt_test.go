@@ -1,7 +1,7 @@
 package simplebolt
 
 import (
-	"github.com/xyproto/pinterface"
+	"github.com/xyproto/pinterface/v2"
 	"os"
 	"path"
 	"testing"
@@ -283,6 +283,112 @@ func TestVarious(t *testing.T) {
 
 	// Check that the hash map qualifies for the IHashMap interface
 	var _ pinterface.IHashMap = h
+}
+
+func TestLastN(t *testing.T) {
+	db, err := New(path.Join(os.TempDir(), "bolt.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	l, err := NewList(db, "lastn_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Remove()
+
+	for _, v := range []string{"a", "b", "c", "d", "e"} {
+		if err := l.Add(v); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Exact count
+	got, err := l.LastN(3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 3 {
+		t.Fatalf("expected 3 elements, got %d", len(got))
+	}
+	if got[0] != "c" || got[1] != "d" || got[2] != "e" {
+		t.Errorf("expected [c d e], got %v", got)
+	}
+
+	// Requesting more than available: should return all 5, not error
+	got, err = l.LastN(8)
+	if err != nil {
+		t.Fatalf("unexpected error requesting 8 from 5-element list: %v", err)
+	}
+	if len(got) != 5 {
+		t.Errorf("expected 5 elements when requesting 8 from 5-element list, got %d", len(got))
+	}
+	if got[0] != "a" || got[4] != "e" {
+		t.Errorf("expected [a b c d e], got %v", got)
+	}
+}
+
+func TestLastUpToN(t *testing.T) {
+	db, err := New(path.Join(os.TempDir(), "bolt.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	l, err := NewList(db, "lastupton_test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer l.Remove()
+
+	for _, v := range []string{"a", "b", "c", "d", "e"} {
+		if err := l.Add(v); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	// Exact count
+	got, err := l.LastUpToN(3)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 3 {
+		t.Fatalf("expected 3 elements, got %d", len(got))
+	}
+	if got[0] != "c" || got[1] != "d" || got[2] != "e" {
+		t.Errorf("expected [c d e], got %v", got)
+	}
+
+	// Requesting more than available: should return all 5, not error
+	got, err = l.LastUpToN(8)
+	if err != nil {
+		t.Fatalf("unexpected error requesting 8 from 5-element list: %v", err)
+	}
+	if len(got) != 5 {
+		t.Errorf("expected 5 elements when requesting 8 from 5-element list, got %d", len(got))
+	}
+	if got[0] != "a" || got[4] != "e" {
+		t.Errorf("expected [a b c d e], got %v", got)
+	}
+
+	// Requesting exactly 1
+	got, err = l.LastUpToN(1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 1 || got[0] != "e" {
+		t.Errorf("expected [e], got %v", got)
+	}
+
+	// Requesting 0 should return empty, not error
+	got, err = l.LastUpToN(0)
+	if err != nil {
+		t.Fatalf("unexpected error requesting 0 elements: %v", err)
+	}
+	if len(got) != 0 {
+		t.Errorf("expected empty slice, got %v", got)
+	}
 }
 
 func TestInterface(t *testing.T) {
